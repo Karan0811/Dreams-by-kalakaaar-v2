@@ -1,0 +1,13 @@
+{
+  "name": "@dbk/config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./tailwind/tokens.css": "./tailwind/tokens.css",
+    "./tailwind/theme.css": "./tailwind/theme.css",
+    "./typescript/base": "./typescript/base.json",
+    "./typescript/nextjs": "./typescript/nextjs.json",
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/nextjs": "./eslint/nextjs.js"
+  }
+}
