@@ -1,0 +1,100 @@
+/**
+ * @dbk/config/tailwind/theme.css
+ *
+ * Maps the semantic tokens in tokens.css onto Tailwind v4's @theme layer,
+ * so utilities like `bg-surface`, `text-primary`, `rounded-card`, and
+ * `space-200` become available platform-wide, generated from one source
+ * (06-design-system.md §2.16 — component code must never hardcode a value
+ * this file already names).
+ */
+@theme inline {
+  /* Colors */
+  --color-brand-primary: var(--color-brand-primary);
+  --color-brand-primary-hover: var(--color-brand-primary-hover);
+  --color-brand-primary-active: var(--color-brand-primary-active);
+  --color-brand-secondary: var(--color-brand-secondary);
+  --color-brand-accent: var(--color-brand-accent);
+
+  --color-neutral-000: var(--color-neutral-000);
+  --color-neutral-050: var(--color-neutral-050);
+  --color-neutral-100: var(--color-neutral-100);
+  --color-neutral-200: var(--color-neutral-200);
+  --color-neutral-400: var(--color-neutral-400);
+  --color-neutral-600: var(--color-neutral-600);
+  --color-neutral-800: var(--color-neutral-800);
+  --color-neutral-900: var(--color-neutral-900);
+
+  --color-background: var(--color-background-default);
+  --color-background-subtle: var(--color-background-subtle);
+  --color-surface: var(--color-surface-default);
+  --color-surface-raised: var(--color-surface-raised);
+
+  --color-border: var(--color-border-default);
+  --color-border-strong: var(--color-border-strong);
+  --color-border-focus: var(--color-border-focus);
+
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-placeholder: var(--color-text-placeholder);
+  --color-text-on-brand: var(--color-text-on-brand);
+  --color-text-link: var(--color-text-link);
+
+  --color-success: var(--color-success);
+  --color-success-background: var(--color-success-background);
+  --color-warning: var(--color-warning);
+  --color-warning-background: var(--color-warning-background);
+  --color-error: var(--color-error);
+  --color-error-background: var(--color-error-background);
+  --color-info: var(--color-info);
+  --color-info-background: var(--color-info-background);
+
+  --color-disabled-background: var(--color-disabled-background);
+  --color-disabled-text: var(--color-disabled-text);
+  --color-disabled-border: var(--color-disabled-border);
+  --color-overlay-scrim: var(--color-overlay-scrim);
+
+  /* Typography */
+  --font-serif: var(--font-family-serif);
+  --font-sans: var(--font-family-sans);
+
+  /* Spacing scale (extends default Tailwind spacing with named tokens) */
+  --spacing-025: var(--space-025);
+  --spacing-050: var(--space-050);
+  --spacing-100: var(--space-100);
+  --spacing-150: var(--space-150);
+  --spacing-200: var(--space-200);
+  --spacing-300: var(--space-300);
+  --spacing-400: var(--space-400);
+  --spacing-600: var(--space-600);
+  --spacing-800: var(--space-800);
+  --spacing-1200: var(--space-1200);
+
+  /* Radius */
+  --radius-none: var(--radius-none);
+  --radius-sm: var(--radius-100);
+  --radius-md: var(--radius-200);
+  --radius-lg: var(--radius-300);
+  --radius-xl: var(--radius-400);
+  --radius-full: var(--radius-full);
+
+  /* Shadow */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  /* Motion */
+  --ease-standard: var(--ease-standard);
+  --ease-emphasized: var(--ease-emphasized);
+
+  /* Containers (6.3) */
+  --container-content-lg: var(--container-lg);
+  --container-content-xl: var(--container-xl);
+
+  /* Breakpoints (2.14) */
+  --breakpoint-xs: 20rem;
+  --breakpoint-sm: 30rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 90rem;
+}
