@@ -1,0 +1,5 @@
+{
+  "extends": "@dbk/config/typescript/base",
+  "compilerOptions": { "outDir": "dist", "jsx": "react-jsx" },
+  "include": ["src"]
+}
