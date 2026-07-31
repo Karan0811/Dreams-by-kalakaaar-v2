@@ -1,0 +1,147 @@
+
+> @dbk/ui@0.0.0 lint
+> eslint .
+
+(node:13639) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/config/eslint/base.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/config/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/composed/WishlistButton.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/data/DataTable.tsx[24m[0m
+[0m   [2m3:8[22m   [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m  [2m66:19[22m  [31merror[39m    The attribute aria-sort is not supported by the role button. This role is implicit on the element button                         [2mjsx-a11y/role-supports-aria-props[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/data/Table.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/disclosure/Accordion.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/disclosure/Breadcrumb.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/disclosure/Pagination.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/disclosure/Tabs.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/feedback/Alert.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/feedback/EmptyState.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/feedback/ErrorState.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/feedback/NotFoundState.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/feedback/Spinner.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/forms/Autocomplete.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/layout/Container.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/layout/ResponsiveGrid.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/layout/Section.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/media/Image.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/media/ImagePlaceholder.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/overlays/ConfirmDialog.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/overlays/Dialog.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/overlays/Drawer.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/overlays/DropdownMenu.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/overlays/Popover.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/overlays/Sheet.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/overlays/Tooltip.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Avatar.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Badge.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Button.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Card.tsx[24m[0m
+[0m   [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m  [2m24:5[22m  [31merror[39m    Headings must have content and the content must be accessible by a screen reader                                                 [2mjsx-a11y/heading-has-content[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Checkbox.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Chip.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/FormField.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Input.tsx[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Label.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/PasswordInput.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Progress.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Radio.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/SearchInput.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Select.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Separator.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Switch.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui/src/primitives/Textarea.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[31m[1m✖ 44 problems (2 errors, 42 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
+⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `lint` failed with error:
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m1[39m
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m @dbk/ui@0.0.0
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/ui
+⠙[1G[0K[1mnpm[22m [31merror[39m command failed
+⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c eslint .
+⠙[1G[0K

@@ -1,0 +1,15 @@
+
+> @dbk/api-client@0.0.0 lint
+> eslint .
+
+(node:13641) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/config/eslint/base.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/config/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[0m[0m
+[0m[4m/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/packages/api-client/src/QueryProvider.tsx[24m[0m
+[0m  [2m3:8[22m  [33mwarning[39m  * import is invalid because 'default' from 'react' is restricted. Import named exports from react instead of the default export  [2mno-restricted-imports[22m[0m
+[0m[0m
+[0m[33m[1m✖ 1 problem (0 errors, 1 warning)[22m[39m[0m
+[0m[33m[1m[22m[39m[0m
+⠙[1G[0K

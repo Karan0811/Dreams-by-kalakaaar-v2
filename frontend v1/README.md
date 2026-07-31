@@ -12,11 +12,11 @@ frontend/
 │   ├── buyer/       # Buyer-facing storefront (Next.js 15 App Router)
 │   └── creator/     # Creator Dashboard (Next.js 15 App Router)
 └── packages/
-    ├── ui/          # Shared, design-token-driven component library
+    ├── ui/          # Shared, design-token-driven component library — see packages/ui/README.md
     ├── api-client/  # apiFetch/browserFetch, React Query hooks, query keys
     ├── auth/         # Better Auth config, session + permission guards
     ├── types/        # Shared domain/API TypeScript types
-    ├── utils/        # Formatting, shared Zod schemas, cn(), error copy
+    ├── utils/        # Formatting, shared Zod schemas, cn(), error copy, and other cross-cutting helpers — see packages/utils/README.md
     └── config/        # Shared Tailwind v4 tokens/theme, ESLint, TS presets
 ```
 
@@ -39,6 +39,26 @@ npm run build           # production build, both apps
 npm run type-check
 npm run lint
 ```
+
+## Sprint 0.5 — Shared Packages Foundation
+
+`packages/ui` and `packages/utils` were extended with the generic,
+product-agnostic building blocks every module (Products, and future ones)
+draws on: form controls (Radio/Switch/Select/Autocomplete), overlays
+(Dialog/Sheet/Drawer/Popover/Tooltip/DropdownMenu/ConfirmDialog), disclosure
+(Tabs/Accordion/Breadcrumb/Pagination), a generic DataTable, media handling,
+and layout primitives (Container/Section/ResponsiveGrid) on the `ui` side;
+a logger, pagination/search/slug/file/image helpers, generic validators, and
+error classes on the `utils` side. Full list and usage notes in each
+package's own README. No `packages/shared` was created — see that README
+for why.
+
+This work didn't touch `apps/`, `packages/api-client`, `packages/auth`, or
+anything already owned by the Products module in progress; a follow-up
+sprint should migrate existing hand-rolled UI (the native `<select>` in
+`apps/buyer/components/ProductListClient.tsx`, for one) onto these
+components where it makes sense, but that migration is out of this sprint's
+scope.
 
 ## Notes for the next sprint
 
