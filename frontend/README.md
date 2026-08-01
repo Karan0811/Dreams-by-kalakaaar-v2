@@ -12,11 +12,11 @@ frontend/
 │   ├── buyer/       # Buyer-facing storefront (Next.js 15 App Router)
 │   └── creator/     # Creator Dashboard (Next.js 15 App Router)
 └── packages/
-    ├── ui/          # Shared, design-token-driven component library
+    ├── ui/          # Shared, design-token-driven component library — see packages/ui/README.md
     ├── api-client/  # apiFetch/browserFetch, React Query hooks, query keys
     ├── auth/         # Better Auth config, session + permission guards
     ├── types/        # Shared domain/API TypeScript types
-    ├── utils/        # Formatting, shared Zod schemas, cn(), error copy
+    ├── utils/        # Formatting, shared Zod schemas, cn(), error copy, and other cross-cutting helpers — see packages/utils/README.md
     └── config/        # Shared Tailwind v4 tokens/theme, ESLint, TS presets
 ```
 
@@ -40,6 +40,50 @@ npm run type-check
 npm run lint
 ```
 
+## Sprint 0.5 — Shared Packages Foundation
+
+`packages/ui` and `packages/utils` were extended with the generic,
+product-agnostic building blocks every module (Products, and future ones)
+draws on: form controls (Radio/Switch/Select/Autocomplete), overlays
+(Dialog/Sheet/Drawer/Popover/Tooltip/DropdownMenu/ConfirmDialog), disclosure
+(Tabs/Accordion/Breadcrumb/Pagination), a generic DataTable, media handling,
+and layout primitives (Container/Section/ResponsiveGrid) on the `ui` side;
+a logger, pagination/search/slug/file/image helpers, generic validators, and
+error classes on the `utils` side. Full list and usage notes in each
+package's own README. No `packages/shared` was created — see that README
+for why.
+
+This work didn't touch `apps/`, `packages/api-client`, `packages/auth`, or
+anything already owned by the Products module in progress; a follow-up
+sprint should migrate existing hand-rolled UI (the native `<select>` in
+`apps/buyer/components/ProductListClient.tsx`, for one) onto these
+components where it makes sense, but that migration is out of this sprint's
+scope.
+
+## Sprint 0.75 — Shared Commerce Foundation
+
+Extended `packages/ui`, `packages/utils`, and `packages/api-client` with
+the reusable dashboard/commerce infrastructure future modules will need:
+shared hooks (`useDebounce`, `usePagination`, `useFileUpload`,
+`useConfirmationDialog`, `useAutosave`, and more), layout primitives
+(`AppShell`, `TopNav`, `UserMenu`, `PageHeader`, `EmptyLayout`, a now
+collapsible `Sidebar`), upload infrastructure (`FileDropzone` +
+`useFileUpload` + progress/preview UI, abstraction-only — no backend
+wiring), reusable (non-product) search infrastructure
+(`SearchProvider`/`CommandPalette`), a notification center distinct from
+the existing toast system, richer error handling (`ErrorBoundary`,
+`ApiErrorState`, `NetworkErrorState`), a `Shimmer` loading effect, and a
+generic optimistic-mutation wrapper + query-key factory in
+`packages/api-client`. No Products/Cart/Checkout/Orders/Wishlist/Reviews
+logic. Full inventory and usage examples in
+`docs/frontend/shared-commerce-foundation.md`.
+
+As with Sprint 0.5, several of these map directly onto something an app
+already hand-rolls (Creator Studio's `DashboardChrome` header, the
+duplicated `(auth)/layout.tsx` shell in both apps) — adopting the shared
+version there is flagged as a deliberate follow-up, not done as part of
+this sprint.
+
 ## Notes for the next sprint
 
 - **Backend dependency**: every Route Handler assumes a running upstream
@@ -50,9 +94,12 @@ npm run lint
   is present in this checkout.
 - **Not yet built** (explicitly out of Sprint 1's 23-item scope, but linked
   to from navigation so they're the natural next slice): Orders
-  list/detail, Wishlist page, Addresses, Messages, Notifications, Settings,
-  Checkout, Creator Products/Orders/Analytics/Payouts pages, and the full
-  Creator Registration flow at `/become-a-creator`.
+  list/detail, Wishlist page, Addresses, Messages, a Notifications
+  *page/feature* (the reusable notification-center infrastructure itself
+  now exists as of Sprint 0.75 — `NotificationProvider`/`NotificationCenter`
+  — but nothing wires it to a real event source yet), Settings, Checkout,
+  Creator Products/Orders/Analytics/Payouts pages, and the full Creator
+  Registration flow at `/become-a-creator`.
 - **Guest cart**: `/api/cart` currently returns an empty cart shape for
   unauthenticated visitors rather than persisting a session-scoped guest
   cart — flagged inline in `apps/buyer/app/api/cart/route.ts` as the seam

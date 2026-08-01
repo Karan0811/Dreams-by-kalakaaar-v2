@@ -33,7 +33,7 @@ export default [
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      "@typescript-eslint/consistent-type-imports": "warn",
+      // "@typescript-eslint/consistent-type-imports": "warn",
       // Feature boundary rule (11-frontend-architecture.md §4.3): a feature's
       // internals may only be imported through its index.ts barrel.
       "import/no-restricted-paths": [

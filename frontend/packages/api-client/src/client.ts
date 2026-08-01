@@ -7,6 +7,10 @@ export interface RequestOptions extends Omit<RequestInit, "body"> {
   /** Attached to mutating requests per 09-api-architecture.md's idempotency
    * contract; only idempotent requests are safe to auto-retry (§10.7). */
   idempotencyKey?: string;
+  next?: {
+    revalidate?: number | false;
+    tags?: string[];
+  };
 }
 
 /**
