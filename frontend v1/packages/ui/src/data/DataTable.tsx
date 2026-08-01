@@ -59,15 +59,19 @@ export function DataTable<T>({
           {columns.map((column) => {
             const isSorted = sort?.columnId === column.id;
             const SortIcon = !isSorted ? ChevronsUpDown : sort?.direction === "asc" ? ArrowUp : ArrowDown;
+            const ariaSort = isSorted ? (sort?.direction === "asc" ? "ascending" : "descending") : "none";
 
             return (
-              <TableHead key={column.id} className={column.className}>
+              <TableHead
+                key={column.id}
+                className={column.className}
+                aria-sort={column.sortable ? ariaSort : undefined}
+              >
                 {column.sortable ? (
                   <button
                     type="button"
                     onClick={() => onSortChange?.(column.id)}
                     className="flex items-center gap-1 uppercase tracking-wide hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded"
-                    aria-sort={isSorted ? (sort?.direction === "asc" ? "ascending" : "descending") : "none"}
                   >
                     {column.header}
                     <SortIcon className="size-3.5" aria-hidden />
@@ -95,7 +99,23 @@ export function DataTable<T>({
               <TableRow
                 key={getRowId(row)}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={cn(onRowClick ? "cursor-pointer" : undefined)}
+                onKeyDown={
+                  onRowClick
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onRowClick(row);
+                        }
+                      }
+                    : undefined
+                }
+                role={onRowClick ? "button" : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
+                className={cn(
+                  onRowClick
+                    ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-border-focus)]"
+                    : undefined,
+                )}
               >
                 {columns.map((column) => (
                   <TableCell key={column.id} className={column.className}>

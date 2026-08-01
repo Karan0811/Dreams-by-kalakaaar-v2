@@ -50,6 +50,8 @@ export function Autocomplete({
   const filtered = query
     ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
     : options;
+  const activeOption = filtered[activeIndex];
+  const getOptionId = (optionValue: string) => `${listboxId}-option-${optionValue}`;
 
   function selectOption(option: AutocompleteOption) {
     onChange(option.value);
@@ -83,6 +85,7 @@ export function Autocomplete({
           aria-expanded={open}
           aria-controls={listboxId}
           aria-autocomplete="list"
+          aria-activedescendant={open && activeOption ? getOptionId(activeOption.value) : undefined}
           hasError={hasError}
           disabled={disabled}
           placeholder={placeholder}

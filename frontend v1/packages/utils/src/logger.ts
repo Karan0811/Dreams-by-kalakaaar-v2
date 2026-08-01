@@ -14,7 +14,8 @@ function emit(level: LogLevel, message: string, context?: Record<string, unknown
   if (level === "debug" && !isDev) return;
 
   const payload = context ? [message, context] : [message];
-  // eslint-disable-next-line no-console -- this *is* the logging primitive
+  // This IS the logging primitive everything else in the app should call
+  // instead of console directly.
   console[level === "debug" ? "log" : level](`[${level.toUpperCase()}]`, ...payload);
 }
 

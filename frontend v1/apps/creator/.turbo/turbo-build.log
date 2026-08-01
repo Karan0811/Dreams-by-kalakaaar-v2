@@ -6,29 +6,56 @@
    - Environments: .env.local
 
  [37m[1m [22m[39m Creating an optimized production build ...
+ ⚠ Compiled with warnings
+
+../../node_modules/jose/dist/webapi/lib/deflate.js
+A Node.js API is used (CompressionStream at line: 10) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+../../node_modules/jose/dist/webapi/lib/deflate.js
+../../node_modules/jose/dist/webapi/jwe/flattened/decrypt.js
+../../node_modules/jose/dist/webapi/index.js
+../../node_modules/better-auth/dist/crypto/jwt.mjs
+../../node_modules/better-auth/dist/cookies/index.mjs
+
+../../node_modules/jose/dist/webapi/lib/deflate.js
+A Node.js API is used (DecompressionStream at line: 26) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+../../node_modules/jose/dist/webapi/lib/deflate.js
+../../node_modules/jose/dist/webapi/jwe/flattened/decrypt.js
+../../node_modules/jose/dist/webapi/index.js
+../../node_modules/better-auth/dist/crypto/jwt.mjs
+../../node_modules/better-auth/dist/cookies/index.mjs
+
  [32m[1m✓[22m[39m Compiled successfully
-[?25l [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m ⨯ ESLint: Cannot serialize key "parse" in "parser": Function values are not supported.
-[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[?25h [37m[1m [22m[39m Linting and checking validity of types     [32m[1m✓[22m[39m Linting and checking validity of types 
-[?25l [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G[?25h [37m[1m [22m[39m Collecting page data     [32m[1m✓[22m[39m Collecting page data 
-[?25l [37m[1m [22m[39m Generating static pages (0/9)  [36m[    ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/9)  [36m[=   ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/9)  [36m[==  ][39m[2K[1G[?25h ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/login". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
-    at i (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/apps/creator/.next/server/chunks/182.js:1:7721)
-    at d (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/apps/creator/.next/server/chunks/182.js:1:24314)
-    at e5 (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/apps/creator/.next/server/app/(auth)/login/page.js:1:18424)
-    at nO (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:45959)
-    at nI (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:47734)
-    at nI (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:62515)
-    at nL (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:65533)
-    at nN (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:63164)
-    at nB (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:68946)
-    at nD (/Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:20:67647)
-Error occurred prerendering page "/login". Read more: https://nextjs.org/docs/messages/prerender-error
-Export encountered an error on /(auth)/login/page: /login, exiting the build.
- [31m[1m⨯[22m[39m Static worker exited with code: 1 and signal: null
-[?25h⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `build` failed with error:
-⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m1[39m
-⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/apps/creator
-⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m @dbk/creator@0.1.0
-⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/karanpamnani/Dreams-by-Kalakaaar-v2/frontend/apps/creator
-⠙[1G[0K[1mnpm[22m [31merror[39m command failed
-⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c next build
-⠙[1G[0K
+[?25l [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m ⨯ ESLint: Cannot serialize key "parse" in "parser": Function values are not supported.
+[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G[1A[2K[1G[?25h [37m[1m [22m[39m Linting and checking validity of types     [32m[1m✓[22m[39m Linting and checking validity of types 
+[?25l [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G[?25h [37m[1m [22m[39m Collecting page data     [32m[1m✓[22m[39m Collecting page data 
+[?25l [37m[1m [22m[39m Generating static pages (0/9)  [36m[    ][39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Generating static pages (0/9)  [36m[=   ][39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Generating static pages (0/9)  [36m[==  ][39m[2K[1G[1A[2K[1G[?25h [32m[1m✓[22m[39m Generating static pages (9/9)
+[?25l [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[?25l [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G[1A[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G[?25h [37m[1m [22m[39m Collecting build traces     [32m[1m✓[22m[39m Collecting build traces 
+[2K[1G[1A[2K[1G[?25h [37m[1m [22m[39m Finalizing page optimization     [32m[1m✓[22m[39m Finalizing page optimization 
+
+[4mRoute (app)[24m                              [4mSize[24m     [4mFirst Load JS[24m
+┌ ○ /                                    151 B           [37m[1m105 kB[22m[39m
+├ ○ /_not-found                          151 B           [37m[1m105 kB[22m[39m
+├ ƒ /api/auth/[...all]                   151 B           [37m[1m105 kB[22m[39m
+├ ƒ /api/dashboard/pending-actions       151 B           [37m[1m105 kB[22m[39m
+├ ƒ /api/dashboard/performance           151 B           [37m[1m105 kB[22m[39m
+├ ○ /become-a-creator                    138 B           [37m[1m132 kB[22m[39m
+├ ƒ /dashboard                           2.16 kB         [37m[1m145 kB[22m[39m
+└ ○ /login                               14.8 kB         [37m[1m156 kB[22m[39m
++ First Load JS shared by all            [37m[1m105 kB[22m[39m
+  ├ chunks/855-4d5b612b4b7e4efa.js       50.5 kB
+  ├ chunks/87c73c54-8b1cc444bf832e0f.js  52.9 kB
+  └ other shared chunks (total)          1.91 kB
+
+
+ƒ Middleware                             [37m[1m32.5 kB[22m[39m
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+[?25h⠙[1G[0K
