@@ -1,5 +1,7 @@
 import type { ProductListParams } from "@dbk/types";
 
+export { createResourceKeys, type ResourceQueryKeys } from "./createResourceKeys";
+
 /**
  * Hierarchical query key factories, one per resource. This is what makes
  * cache invalidation precise (11-frontend-architecture.md §9.6): invalidating

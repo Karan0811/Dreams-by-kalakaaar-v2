@@ -285,3 +285,24 @@ middleware helper) against current documentation and GitHub issues via web searc
 Please run the four commands yourself before treating this as production-ready, and
 send me the exact output if anything still fails — with a real error message I can fix
 it precisely rather than guessing.
+
+---
+
+## Sprint 0.75 — Shared Commerce Foundation
+
+Added reusable, product-agnostic frontend infrastructure to `packages/ui`,
+`packages/utils`, and `packages/api-client`: shared hooks, dashboard layout
+primitives (including an extended, backward-compatible collapsible
+`Sidebar`), abstraction-only upload infrastructure, reusable search
+infrastructure, a notification center, `ErrorBoundary`/`ApiErrorState`/`NetworkErrorState`,
+a `Shimmer` loading effect, and a generic optimistic-mutation wrapper +
+query-key factory. Zero new npm dependencies. Full inventory in
+`docs/frontend/shared-commerce-foundation.md`, IMPLEMENTATION_REPORT.md,
+and MERGE_CHECKLIST.md.
+
+Same sandbox limitation as above applies: no `npm install` in this
+session, so this was validated via a standalone `tsc` syntax pass plus
+manual review against this repo's actual `tsconfig.base.json`
+(`noUncheckedIndexedAccess`, `strict`) and `packages/config/eslint/base.js`
+rule set, not a live lint/typecheck/build run. See IMPLEMENTATION_REPORT.md
+for specifics.
