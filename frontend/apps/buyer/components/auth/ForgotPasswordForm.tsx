@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@dbk/utils";
-import { forgetPassword } from "@dbk/auth";
 import { Alert, Button, FormField, Input } from "@dbk/ui";
 
 export function ForgotPasswordForm() {
@@ -17,10 +16,23 @@ export function ForgotPasswordForm() {
   } = useForm<ForgotPasswordInput>({ resolver: zodResolver(forgotPasswordSchema) });
 
   async function onSubmit(values: ForgotPasswordInput) {
-    await forgetPassword({ email: values.email, redirectTo: "/reset-password" });
-    // §4.4 AUTH-04: identical confirmation whether or not the account exists.
-    setSubmitted(true);
+  const response = await fetch("/api/auth/forgot-password", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: values.email,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to process request");
   }
+
+  // AUTH-04: always show the same success message
+  setSubmitted(true);
+}
 
   if (submitted) {
     return (
