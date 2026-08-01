@@ -2,6 +2,7 @@
   "name": "@dbk/config",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "exports": {
     "./tailwind/tokens.css": "./tailwind/tokens.css",
     "./tailwind/theme.css": "./tailwind/theme.css",
