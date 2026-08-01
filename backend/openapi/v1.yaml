@@ -1,0 +1,719 @@
+openapi: 3.0.3
+info:
+  title: Dreams by Kalakaaar v2 — Backend API
+  version: "1.1.0-sprint01"
+  description: >
+    REST contract for the endpoints implemented in this phase (see
+    ../../backend/SCOPE.md for what's in vs. deferred). Response envelope
+    and error format follow 09-api-architecture.md Sections 2.15-2.16
+    exactly; this file documents only what's actually implemented, not the
+    full documented API surface — see 09-api-architecture.md itself for
+    the complete, aspirational contract.
+    Sprint 01 adds: soft delete, search/filter/sort/pagination on Product
+    listings, Product Images (presigned R2 upload), and Inventory
+    adjustment. See docs/testing/sprint-01-products.md for what's covered
+    and CHANGELOG.md for the full list.
+servers:
+  - url: /v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Users
+  - name: Creators
+  - name: Products
+  - name: Product Images
+  - name: Inventory
+  - name: Health
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      security: []
+      responses:
+        "200": { description: OK }
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness probe (Postgres + Redis)
+      security: []
+      responses:
+        "200": { description: Ready }
+        "503": { $ref: "#/components/responses/Error" }
+
+  /health/deep:
+    get:
+      tags: [Health]
+      summary: Deep dependency health check (operator-only)
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create a new account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, displayName]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 12, maxLength: 128 }
+                displayName: { type: string, minLength: 2, maxLength: 50 }
+                marketingConsent: { type: boolean, default: false }
+      responses:
+        "201":
+          description: Account created
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: HttpOnly refresh-token cookie
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate with email + password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        "200": { description: Authenticated }
+        "401": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the current session and refresh token
+      security: []
+      responses:
+        "204": { description: Logged out }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate the refresh token and issue a new access token
+      security: []
+      responses:
+        "200": { description: New access token issued }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current authenticated identity + roles
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change password (requires current password)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string, minLength: 12, maxLength: 128 }
+      responses:
+        "204": { description: Password changed; all other sessions revoked }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password-reset email (always 204, no account enumeration)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties: { email: { type: string, format: email } }
+      responses:
+        "204": { description: Always returned regardless of whether the email exists }
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Complete a password reset with a token from email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token: { type: string }
+                newPassword: { type: string, minLength: 12, maxLength: 128 }
+      responses:
+        "204": { description: Password reset }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Confirm an email address with a token from email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties: { token: { type: string } }
+      responses:
+        "204": { description: Email verified }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /users/me/profile:
+    get:
+      tags: [Users]
+      summary: Get my profile
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [Users]
+      summary: Update my profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName: { type: string }
+                bio: { type: string }
+                pronouns: { type: string }
+                isPublicProfile: { type: boolean }
+      responses:
+        "200": { description: Updated }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /creator/apply:
+    post:
+      tags: [Creators]
+      summary: Apply to become a Creator (creates a Creator + draft Store)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legalName, category, storeName]
+              properties:
+                legalName: { type: string }
+                businessName: { type: string }
+                taxIdentifier: { type: string }
+                category:
+                  type: string
+                  enum:
+                    [
+                      INDEPENDENT_ARTISAN,
+                      CUSTOM_PERSONALIZATION_SPECIALIST,
+                      SMALL_CREATIVE_STUDIO,
+                      EMERGING_ASPIRING,
+                    ]
+                storeName: { type: string }
+      responses:
+        "201": { description: Application created }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /creator/application:
+    get:
+      tags: [Creators]
+      summary: My Creator application status
+      description: >
+        Sprint 01: response now also includes storeId/storeSlug/storeStatus
+        - the frontend needs storeId to call the creator-scoped Products
+        routes (/v1/stores/{storeId}/products/...), and this was previously
+        the only place that relationship could be resolved from.
+      responses:
+        "200": { description: OK }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /stores/{storeId}/products:
+    parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Products]
+      summary: Create a Product (owner or products:write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateProductInput" }
+      responses:
+        "201": { description: Created }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+    get:
+      tags: [Products]
+      summary: List a Store's Products (any status, incl. DRAFT; owner or products:read)
+      description: >
+        Sprint 01 adds search, structured filters, sort, and — for
+        non-keyset sorts — page-number pagination. See `/products`'s GET
+        for the shared parameter set; this endpoint additionally accepts
+        `status` (creator-only — the public listing is always forced to
+        ACTIVE).
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Query"
+        - $ref: "#/components/parameters/CategoryId"
+        - $ref: "#/components/parameters/ProductType"
+        - $ref: "#/components/parameters/MinPrice"
+        - $ref: "#/components/parameters/MaxPrice"
+        - $ref: "#/components/parameters/InStockOnly"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Page"
+        - name: status
+          in: query
+          description: Creator-only lifecycle filter.
+          schema:
+            type: string
+            enum: [DRAFT, PENDING_APPROVAL, ACTIVE, PAUSED, ARCHIVED, REJECTED]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductCollectionEnvelope" }
+
+  /stores/{storeId}/products/{productId}:
+    parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: productId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Products]
+      summary: Get a Product (owner-side, any status)
+      responses:
+        "200": { description: OK }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [Products]
+      summary: Update fields, or transition status (publish/pause/archive)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/UpdateProductInput"
+                - $ref: "#/components/schemas/ProductStatusTransition"
+      responses:
+        "200": { description: Updated }
+        "422":
+          description: >
+            Publish-readiness failure (422 VALIDATION_ERROR) — e.g.
+            attempting to set status=ACTIVE with zero media attached.
+    delete:
+      tags: [Products]
+      summary: Soft-delete a Product (owner or products:write)
+      description: >
+        Sprint 01. Sets `deletedAt`; the row is preserved but excluded from
+        every subsequent creator- and buyer-facing query. Distinct from the
+        reversible `ARCHIVED` status above — there is no un-delete endpoint.
+      responses:
+        "204": { description: Deleted, no content }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /stores/{storeId}/products/{productId}/media/upload-url:
+    parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: productId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Product Images]
+      summary: Request a presigned direct-upload URL (step 1 of 2)
+      description: >
+        Sprint 01. Creates a PENDING_UPLOAD Media row and returns a
+        short-lived presigned Cloudflare R2 PUT URL. The client uploads the
+        file bytes directly to R2 — never through this API — then calls
+        POST .../media to confirm and attach it to the gallery.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RequestProductMediaUploadInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductMediaUploadUrl" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /stores/{storeId}/products/{productId}/media:
+    parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: productId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Product Images]
+      summary: Attach an uploaded Media asset to the Product gallery (step 2 of 2)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AttachProductMediaInput" }
+      responses:
+        "201": { description: Created }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409":
+          description: This Media asset has already been attached to a product.
+
+  /stores/{storeId}/products/{productId}/media/{productMediaId}:
+    parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: productId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: productMediaId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      tags: [Product Images]
+      summary: Reorder, re-caption, or set the primary gallery image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateProductMediaInput" }
+      responses:
+        "200": { description: Updated }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [Product Images]
+      summary: Remove an image from the Product gallery
+      responses:
+        "204": { description: Deleted, no content }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /stores/{storeId}/products/{productId}/variants/{variantId}/inventory:
+    parameters:
+      - name: storeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: productId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: variantId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      tags: [Inventory]
+      summary: Adjust a Variant's inventory by a signed delta
+      description: >
+        Sprint 01. `quantityDelta` is always applied against the current
+        row (`quantity_available = quantity_available + delta`, floored at
+        zero) — this endpoint never accepts a raw overwrite value. A full
+        InventoryTransaction audit ledger (08-database-design.md Section
+        9.2) is deferred alongside the rest of the Inventory domain per
+        backend/SCOPE.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdjustInventoryInput" }
+      responses:
+        "200": { description: Updated }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /products:
+    get:
+      tags: [Products]
+      summary: Public Product listing (ACTIVE only)
+      description: >
+        Sprint 01 adds `q` (free-text title/description search — ILIKE,
+        not a ranked full-text search; that arrives with the dedicated
+        Search module), structured filters, and `sort`. `newest`/`oldest`
+        use the existing keyset cursor; `priceLow`/`priceHigh`/
+        `bestSelling` use `page` instead (see the Sort parameter
+        description) — a deliberate trade-off, documented in
+        docs/testing/sprint-01-products.md, not an oversight.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Query"
+        - $ref: "#/components/parameters/CategoryId"
+        - name: storeId
+          in: query
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/ProductType"
+        - $ref: "#/components/parameters/MinPrice"
+        - $ref: "#/components/parameters/MaxPrice"
+        - $ref: "#/components/parameters/InStockOnly"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductCollectionEnvelope" }
+
+  /products/{idOrSlug}:
+    get:
+      tags: [Products]
+      summary: Public Product detail (ACTIVE only) by ID or slug
+      security: []
+      parameters:
+        - name: idOrSlug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+        "404": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque keyset cursor. Ignored when `sort` is priceLow/priceHigh/bestSelling — use `page` instead.
+      schema: { type: string }
+    Page:
+      name: page
+      in: query
+      description: 1-indexed page number. Only consulted when `sort` is priceLow/priceHigh/bestSelling.
+      schema: { type: integer, minimum: 1, default: 1 }
+    Query:
+      name: q
+      in: query
+      description: Free-text keyword match against title/description (ILIKE).
+      schema: { type: string, minLength: 1, maxLength: 120 }
+    CategoryId:
+      name: categoryId
+      in: query
+      schema: { type: string, format: uuid }
+    ProductType:
+      name: productType
+      in: query
+      schema: { type: string, enum: [READY_MADE, MADE_TO_ORDER] }
+    MinPrice:
+      name: minPrice
+      in: query
+      description: Integer minor units. Filters on each product's cheapest variant.
+      schema: { type: integer, minimum: 0 }
+    MaxPrice:
+      name: maxPrice
+      in: query
+      schema: { type: integer, minimum: 0 }
+    InStockOnly:
+      name: inStockOnly
+      in: query
+      schema: { type: boolean }
+    Sort:
+      name: sort
+      in: query
+      description: >
+        newest/oldest are keyset-cursor-paginated (use `cursor`).
+        priceLow/priceHigh/bestSelling are page-paginated (use `page`) since
+        they order by a computed/denormalized column outside the cursor's
+        (createdAt, id) tuple.
+      schema:
+        type: string
+        enum: [newest, oldest, priceLow, priceHigh, bestSelling]
+        default: newest
+
+  responses:
+    Error:
+      description: Error envelope (09-api-architecture.md Section 2.15)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  schemas:
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field: { type: string }
+                  issue: { type: string }
+            correlationId: { type: string }
+            timestamp: { type: string, format: date-time }
+
+    PaginationEnvelope:
+      type: object
+      properties:
+        nextCursor: { type: string, nullable: true }
+        hasMore: { type: boolean }
+        limit: { type: integer }
+        totalCount: { type: integer }
+        page:
+          type: integer
+          nullable: true
+          description: Populated only for page-paginated sorts (priceLow/priceHigh/bestSelling).
+        totalPages: { type: integer, nullable: true }
+
+    ProductCollectionEnvelope:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { type: object }
+        pagination: { $ref: "#/components/schemas/PaginationEnvelope" }
+
+    CreateProductInput:
+      type: object
+      required: [title, description, variants]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        productType: { type: string, enum: [READY_MADE, MADE_TO_ORDER] }
+        leadTimeDays: { type: integer }
+        primaryCategoryId: { type: string, format: uuid }
+        variants:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [priceAmount]
+            properties:
+              attributes: { type: object, additionalProperties: { type: string } }
+              priceAmount: { type: integer, description: "Integer minor units" }
+              priceCurrency: { type: string, default: INR }
+              skuReference: { type: string }
+              initialQuantity: { type: integer, default: 0 }
+
+    UpdateProductInput:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        leadTimeDays: { type: integer }
+        primaryCategoryId: { type: string, format: uuid }
+
+    ProductStatusTransition:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [ACTIVE, PAUSED, ARCHIVED] }
+
+    RequestProductMediaUploadInput:
+      type: object
+      required: [fileName, contentType, sizeBytes]
+      properties:
+        fileName: { type: string }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+        sizeBytes: { type: integer, maximum: 10485760, description: "Max 10MB" }
+
+    ProductMediaUploadUrl:
+      type: object
+      properties:
+        uploadUrl: { type: string, format: uri, description: "Presigned R2 PUT URL, expires in 5 minutes" }
+        mediaId: { type: string, format: uuid }
+        publicUrl: { type: string, format: uri }
+
+    AttachProductMediaInput:
+      type: object
+      required: [mediaId, altText]
+      properties:
+        mediaId: { type: string, format: uuid }
+        altText: { type: string, minLength: 3, maxLength: 255 }
+        variantId: { type: string, format: uuid }
+        isPrimary: { type: boolean, default: false }
+
+    UpdateProductMediaInput:
+      type: object
+      properties:
+        altText: { type: string, minLength: 3, maxLength: 255 }
+        displayOrder: { type: integer, minimum: 0 }
+        isPrimary: { type: boolean }
+
+    AdjustInventoryInput:
+      type: object
+      required: [quantityDelta]
+      properties:
+        quantityDelta:
+          type: integer
+          description: Signed delta applied to quantityAvailable; never zero.
+        lowStockThreshold: { type: integer, minimum: 0 }
+        reason: { type: string, maxLength: 255 }
