@@ -1,0 +1,16 @@
+# pnpm 11 requires this file to exist for pnpm-specific settings to load at
+# all (settings previously read from .npmrc or package.json#pnpm are no
+# longer read from either — see https://pnpm.io/settings). This repo is a
+# single package, not a multi-package workspace; this file exists solely to
+# carry `allowBuilds` below.
+#
+# allowBuilds pre-approves postinstall/build scripts for dependencies pnpm's
+# supply-chain policy blocks by default, so plain `pnpm install` is
+# deterministic (exit 0) for every developer and CI runner instead of
+# failing with ERR_PNPM_IGNORED_BUILDS and requiring an interactive
+# `pnpm approve-builds` on first install. These are the exact packages pnpm
+# reported as blocked; none of them are Sprint 01 additions.
+allowBuilds:
+  '@sentry/cli': true
+  esbuild: true
+  sharp: true
