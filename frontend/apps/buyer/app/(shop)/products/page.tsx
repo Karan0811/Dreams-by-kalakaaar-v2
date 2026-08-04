@@ -17,18 +17,25 @@ function firstValue(value: string | string[] | undefined): string | undefined {
 }
 
 function parseParams(sp: { [key: string]: string | string[] | undefined }): ProductListParams {
+  const minPrice = firstValue(sp.minPrice);
+  const maxPrice = firstValue(sp.maxPrice);
+
   return {
     categorySlug: firstValue(sp.category),
     creatorSlug: firstValue(sp.creator),
     q: firstValue(sp.q),
-    sort: (firstValue(sp.sort) as ProductListParams["sort"]) ?? "relevance",
+    sort: (firstValue(sp.sort) as ProductListParams["sort"]) ?? "newest",
+    minPriceMinor: minPrice ? Number(minPrice) : undefined,
+    maxPriceMinor: maxPrice ? Number(maxPrice) : undefined,
+    inStockOnly: firstValue(sp.inStock) === "true",
   };
 }
 
 /**
  * Server-rendered first page (11-frontend-architecture.md §7.4/§7.7) — the
  * grid is meaningfully populated before any JS runs, then `ProductListClient`
- * hydrates over it and owns "Load more" pagination client-side.
+ * hydrates over it and owns search/filter/sort URL state plus "Load more"
+ * pagination client-side.
  */
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const resolvedParams = await searchParams;

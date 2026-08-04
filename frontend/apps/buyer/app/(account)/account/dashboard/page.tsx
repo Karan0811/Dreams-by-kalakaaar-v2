@@ -22,7 +22,7 @@ export default async function AccountDashboardPage() {
         <h1 className="font-serif text-[24px] text-text-primary">
           Welcome back{session?.displayName ? `, ${session.displayName}` : ""}
         </h1>
-        <p className="mt-1 text-[14px] text-text-secondary">Here's a quick look at your account.</p>
+        <p className="mt-1 text-[14px] text-text-secondary">Here&apos;s a quick look at your account.</p>
       </div>
 
       <Card className="flex flex-col items-center gap-3 py-[var(--space-800)] text-center">
@@ -30,7 +30,7 @@ export default async function AccountDashboardPage() {
         <div>
           <p className="text-[16px] font-medium text-text-primary">No orders yet</p>
           <p className="mt-1 text-[14px] text-text-secondary">
-            When you place an order, you'll be able to track it here.
+            When you place an order, you&apos;ll be able to track it here.
           </p>
         </div>
         <Button asChild>

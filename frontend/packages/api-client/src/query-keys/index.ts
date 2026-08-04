@@ -33,6 +33,12 @@ export const creatorDashboardKeys = {
     [...creatorDashboardKeys.all, "performance", periodLabel] as const,
   orders: (params?: Record<string, unknown>) =>
     [...creatorDashboardKeys.all, "orders", params ?? {}] as const,
-  products: (params?: Record<string, unknown>) =>
-    [...creatorDashboardKeys.all, "products", params ?? {}] as const,
+};
+
+export const creatorProductKeys = {
+  all: ["creator-products"] as const,
+  lists: () => [...creatorProductKeys.all, "list"] as const,
+  list: (params: Record<string, unknown>) => [...creatorProductKeys.lists(), params] as const,
+  details: () => [...creatorProductKeys.all, "detail"] as const,
+  detail: (productId: string) => [...creatorProductKeys.details(), productId] as const,
 };

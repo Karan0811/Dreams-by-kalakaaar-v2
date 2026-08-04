@@ -26,13 +26,20 @@ export interface Money {
   currency: "INR";
 }
 
-/** 09-api-architecture.md §2.7 cursor pagination envelope. */
+/** 09-api-architecture.md §2.7 cursor pagination envelope. Sprint 01 adds
+ * optional page/totalPages for the Products list endpoint's price/popularity
+ * sorts, which use page-number pagination instead of the keyset cursor above
+ * (see @dbk/api-client's buildFilterParams doc comment). Every existing
+ * cursor-based caller is unaffected — these two fields are simply absent. */
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
     nextCursor: string | null;
     hasMore: boolean;
-    total?: number;
+    /** Matches the backend's actual field name exactly (shared/validation/common-schemas.ts). */
+    totalCount?: number;
+    page?: number | null;
+    totalPages?: number | null;
   };
 }
 

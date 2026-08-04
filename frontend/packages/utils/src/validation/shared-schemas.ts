@@ -48,6 +48,44 @@ export const addCartItemSchema = z.object({
 
 export type AddCartItemInput = z.infer<typeof addCartItemSchema>;
 
+/**
+ * Sprint 01 — creator Product form. Mirrors
+ * backend/src/modules/products/schemas.ts's createProductSchema field-for-
+ * field (including messages, where practical) so a client-side validation
+ * error and a server-side one never disagree about what's wrong.
+ */
+export const productVariantFormSchema = z.object({
+  priceAmount: z
+    .number()
+    .int("Price must be a whole number of paise")
+    .positive("Price must be greater than 0"),
+  skuReference: z.string().trim().max(64).optional(),
+  initialQuantity: z.number().int().min(0).default(0),
+});
+export type ProductVariantFormInput = z.infer<typeof productVariantFormSchema>;
+
+export const productFormSchema = z.object({
+  title: z.string().trim().min(3, "Title must be at least 3 characters").max(200),
+  description: z.string().trim().min(20, "Description must be at least 20 characters").max(5000),
+  productType: z.enum(["READY_MADE", "MADE_TO_ORDER"]),
+  leadTimeDays: z.number().int().min(0).max(180).optional(),
+  primaryCategoryId: z.string().uuid("Enter a valid category id").optional().or(z.literal("")),
+  variants: z.array(productVariantFormSchema).min(1, "Add at least one variant"),
+});
+export type ProductFormInput = z.infer<typeof productFormSchema>;
+
+/** Edit form only — mirrors updateProductSchema exactly. There is no
+ * backend endpoint to edit variants after creation (only at creation time),
+ * so this deliberately excludes them; the edit page shows variants
+ * read-only alongside a separate inventory-adjustment control. */
+export const productEditFormSchema = z.object({
+  title: z.string().trim().min(3, "Title must be at least 3 characters").max(200),
+  description: z.string().trim().min(20, "Description must be at least 20 characters").max(5000),
+  leadTimeDays: z.number().int().min(0).max(180).optional(),
+  primaryCategoryId: z.string().uuid("Enter a valid category id").optional().or(z.literal("")),
+});
+export type ProductEditFormInput = z.infer<typeof productEditFormSchema>;
+
 export const addressSchema = z.object({
   fullName: displayNameSchema,
   phone: phoneSchema,

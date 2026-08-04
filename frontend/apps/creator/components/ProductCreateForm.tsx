@@ -6,7 +6,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { productFormSchema, toMinorUnits, type ProductFormInput } from "@dbk/utils";
 import { useCreateProduct, ApiError } from "@dbk/api-client";
-import { Alert, Button, FormField, Input, Label, Textarea } from "@dbk/ui";
+import {
+  Alert,
+  Button,
+  FormField,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@dbk/ui";
 import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 
 export function ProductCreateForm({ storeId }: { storeId: string }) {
@@ -18,6 +30,7 @@ export function ProductCreateForm({ storeId }: { storeId: string }) {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<ProductFormInput>({
     resolver: zodResolver(productFormSchema),
@@ -75,14 +88,18 @@ export function ProductCreateForm({ storeId }: { storeId: string }) {
       <div className="grid grid-cols-2 gap-[var(--space-300)]">
         <div className="flex flex-col gap-[var(--space-050)]">
           <Label htmlFor="productType">Product type</Label>
-          <select
-            id="productType"
-            {...register("productType")}
-            className="min-h-[var(--size-touch-target-min)] rounded-md border border-border bg-surface px-3 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+          <Select
+            defaultValue="READY_MADE"
+            onValueChange={(value) => setValue("productType", value as ProductFormInput["productType"], { shouldDirty: true })}
           >
-            <option value="READY_MADE">Ready-made</option>
-            <option value="MADE_TO_ORDER">Made to order</option>
-          </select>
+            <SelectTrigger id="productType">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="READY_MADE">Ready-made</SelectItem>
+              <SelectItem value="MADE_TO_ORDER">Made to order</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {watch("productType") === "MADE_TO_ORDER" ? (

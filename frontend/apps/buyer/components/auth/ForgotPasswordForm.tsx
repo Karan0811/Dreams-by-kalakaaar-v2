@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@dbk/utils";
+import { requestPasswordReset } from "@dbk/auth";
 import { Alert, Button, FormField, Input } from "@dbk/ui";
 
 export function ForgotPasswordForm() {
@@ -16,28 +17,15 @@ export function ForgotPasswordForm() {
   } = useForm<ForgotPasswordInput>({ resolver: zodResolver(forgotPasswordSchema) });
 
   async function onSubmit(values: ForgotPasswordInput) {
-  const response = await fetch("/api/auth/forgot-password", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: values.email,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to process request");
+    await requestPasswordReset({ email: values.email, redirectTo: "/reset-password" });
+    // §4.4 AUTH-04: identical confirmation whether or not the account exists.
+    setSubmitted(true);
   }
-
-  // AUTH-04: always show the same success message
-  setSubmitted(true);
-}
 
   if (submitted) {
     return (
       <Alert variant="success" title="Check your email">
-        If an account exists for that email, we've sent a link to reset your password.
+        If an account exists for that email, we&apos;ve sent a link to reset your password.
       </Alert>
     );
   }
@@ -47,7 +35,7 @@ export function ForgotPasswordForm() {
       <div>
         <h1 className="font-serif text-[22px] text-text-primary">Reset your password</h1>
         <p className="mt-1 text-[14px] text-text-secondary">
-          Enter your email and we'll send you a link to reset your password.
+          Enter your email and we&apos;ll send you a link to reset your password.
         </p>
       </div>
 

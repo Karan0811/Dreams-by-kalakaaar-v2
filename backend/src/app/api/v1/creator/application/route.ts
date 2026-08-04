@@ -8,7 +8,7 @@ export const GET = withRouteHandler(async ({ request, correlationId }) => {
   const auth = await authenticate(request);
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
-  const creator = await creatorsService.getMyApplication(auth.userId);
+  const { creator, store } = await creatorsService.getMyApplication(auth.userId);
 
   return jsonResource(
     {
@@ -19,6 +19,11 @@ export const GET = withRouteHandler(async ({ request, correlationId }) => {
       onboardingStatus: creator.onboardingStatus,
       approvedAt: creator.approvedAt,
       createdAt: creator.createdAt,
+      // Sprint 01: needed by the frontend to call the creator-scoped
+      // Products routes (/v1/stores/{storeId}/products/...).
+      storeId: store?.id ?? null,
+      storeSlug: store?.slug ?? null,
+      storeStatus: store?.status ?? null,
     },
     { correlationId, rateLimit },
   );

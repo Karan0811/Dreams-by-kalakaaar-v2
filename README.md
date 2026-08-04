@@ -6,9 +6,12 @@ art and personalized gifts.
 ## Project Status
 
 Foundation phase (auth, database, shared packages, frontend/backend
-scaffolding) is complete. **Sprint 01 — Products Module** is complete: see
-`CHANGELOG.md` for the full list of additions and
-`docs/testing/sprint-01-products.md` for the manual testing checklist.
+scaffolding) is complete. **Sprint 01 — Products Module**, including a
+subsequent hardening pass (reusable-component migration, Creator Dashboard
+completion, backend logging review, realistic demo data, and a
+previously-undetected migration bug fix), is complete: see `CHANGELOG.md`
+for the full list of additions and
+`docs/testing/sprint-01-production.md` for the manual testing checklist.
 
 One cross-cutting gap carries over from the foundation phase and blocks
 full end-to-end verification of the creator-side Products UI against a

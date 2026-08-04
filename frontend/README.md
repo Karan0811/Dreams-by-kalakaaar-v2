@@ -84,23 +84,50 @@ duplicated `(auth)/layout.tsx` shell in both apps) — adopting the shared
 version there is flagged as a deliberate follow-up, not done as part of
 this sprint.
 
+## Sprint 01 — Products Module
+
+Buyer search/filter/sort/pagination on `/products`, wired to the real
+backend query contract, plus a hardening pass: gallery zoom, a sticky
+mobile Add-to-Cart bar, and a Related Products section. Full creator-side
+product management — My Products (search, status tabs, bulk archive/delete,
+Duplicate Product), Create, Edit (status transitions, delete, drag-and-drop
+image upload/reordering with a keyboard-accessible fallback, autosave, live
+preview, inventory adjustment) — built at
+`apps/creator/app/(dashboard)/dashboard/products/**`. Every hand-rolled
+`<select>`/search box/tab bar/empty-error state in these screens was
+migrated onto the shared component library (`@dbk/ui`) rather than left as
+one-off markup — including retiring a Dialog primitive this sprint
+originally built, in favor of Sprint 0.5's more complete one, once the two
+were reconciled. See `../CHANGELOG.md` and
+`../docs/testing/sprint-01-production.md` for the full list and manual
+test plan.
+
+**Auth bridge gap (top priority for the next sprint)**: this workspace's
+Better Auth instance and the backend's `authenticate()` middleware are two
+independent, unbridged systems — see `packages/auth/src/access-token.ts`'s
+doc comment for the full explanation. Every creator Products BFF route
+(`apps/creator/app/api/products/**`) correctly detects this and returns an
+explicit `501 AUTH_BRIDGE_NOT_CONFIGURED` rather than silently failing or
+faking success. This also affects the Sprint 0.75 dashboard
+pending-actions/performance widgets and anything else that calls the
+backend from the creator app.
+
 ## Notes for the next sprint
 
 - **Backend dependency**: every Route Handler assumes a running upstream
   REST API at `API_BASE_URL` (docs 09/10). Until that's live, Server
   Components that call it (Home's featured row, PLP, PDP) will render their
   already-correct empty/error states rather than content.
-- **Document 17 gap**: not applicable to this repo state — `docs/17-*`
-  is present in this checkout.
-- **Not yet built** (explicitly out of Sprint 1's 23-item scope, but linked
-  to from navigation so they're the natural next slice): Orders
-  list/detail, Wishlist page, Addresses, Messages, a Notifications
-  *page/feature* (the reusable notification-center infrastructure itself
-  now exists as of Sprint 0.75 — `NotificationProvider`/`NotificationCenter`
-  — but nothing wires it to a real event source yet), Settings, Checkout,
-  Creator Products/Orders/Analytics/Payouts pages, and the full Creator
-  Registration flow at `/become-a-creator`.
+- **Not yet built**: Orders list/detail, Wishlist page, Addresses,
+  Messages, a Notifications *page/feature* (the reusable
+  notification-center infrastructure itself exists as of Sprint 0.75 —
+  `NotificationProvider`/`NotificationCenter` — but nothing wires it to a
+  real event source yet), Settings, Checkout, Creator
+  Orders/Analytics/Payouts pages (Products is now built), Collections/Tags/
+  full SEO fields on products (deferred per `backend/SCOPE.md`), and the
+  full Creator Registration flow at `/become-a-creator`.
 - **Guest cart**: `/api/cart` currently returns an empty cart shape for
   unauthenticated visitors rather than persisting a session-scoped guest
   cart — flagged inline in `apps/buyer/app/api/cart/route.ts` as the seam
   for that follow-up work.
+

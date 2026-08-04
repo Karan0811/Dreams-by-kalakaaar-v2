@@ -7,9 +7,9 @@ export default function NotFound() {
     <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-4 px-[var(--space-200)] text-center">
       <Compass className="size-10 text-text-secondary" aria-hidden />
       <div>
-        <h1 className="font-serif text-[22px] text-text-primary">We couldn't find that page</h1>
+        <h1 className="font-serif text-[22px] text-text-primary">We couldn&apos;t find that page</h1>
         <p className="mt-1 max-w-sm text-[14px] text-text-secondary">
-          The page you're looking for may have moved or no longer exists.
+          The page you&apos;re looking for may have moved or no longer exists.
         </p>
       </div>
       <div className="flex gap-3">

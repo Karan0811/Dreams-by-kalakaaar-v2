@@ -88,7 +88,7 @@ written and assumed correct.
   (Postgres + Redis), `/v1/health/deep` (operator-only, timed)
 - RBAC seed script (`backend/src/scripts/seed.ts`, run via `npm run
   db:seed`) and a migration runner (`npm run db:migrate`)
-- OpenAPI 3.0 spec for every endpoint above (`api/openapi/v1.yaml`)
+- OpenAPI 3.0 spec for every endpoint above (`openapi/v1.yaml`, served at `/api/docs`)
 
 ## Deliberately deferred (documented in `/docs`, not built yet)
 

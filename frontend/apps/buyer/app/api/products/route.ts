@@ -6,16 +6,27 @@ import type { ProductListParams } from "@dbk/types";
  * The only thing Client Components are ever allowed to call for product
  * listings — this Route Handler is the BFF boundary
  * (11-frontend-architecture.md §10.1). It never holds business logic beyond
- * translating the request into a call to the upstream REST API.
+ * translating the request into a call to the upstream REST API via
+ * `fetchProductList`, which owns the actual backend query-param translation
+ * (`@dbk/api-client`'s `buildFilterParams`).
  */
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
+  const minPriceMinor = sp.get("minPriceMinor");
+  const maxPriceMinor = sp.get("maxPriceMinor");
+  const page = sp.get("page");
+
   const params: ProductListParams = {
     categorySlug: sp.get("category") ?? undefined,
+    categoryId: sp.get("categoryId") ?? undefined,
     creatorSlug: sp.get("creator") ?? undefined,
     q: sp.get("q") ?? undefined,
     sort: (sp.get("sort") as ProductListParams["sort"]) ?? undefined,
     cursor: sp.get("cursor") ?? undefined,
+    page: page ? Number(page) : undefined,
+    minPriceMinor: minPriceMinor ? Number(minPriceMinor) : undefined,
+    maxPriceMinor: maxPriceMinor ? Number(maxPriceMinor) : undefined,
+    inStockOnly: sp.get("inStockOnly") === "true",
   };
 
   try {

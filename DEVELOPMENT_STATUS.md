@@ -1,254 +1,271 @@
-# DEVELOPMENT_STATUS.md — Sprint 01: Products Module
+# DEVELOPMENT_STATUS.md — Sprint 01 Products Module + Hardening Pass
 
-**Branch:** `feature/sprint-01-products`
-**Base:** `master` (`ec66ab8`)
-**Latest commit:** `11715a5e011db5b3a294204db557637a5f63cd06`
-**Total commits on branch:** 25 (full history below)
-**Working tree:** clean, nothing uncommitted
+**Repository state:** local git history in this delivered ZIP (this sandbox
+has no push credentials — same constraint noted throughout this project).
+Latest commit at hand-off is shown by `git log --oneline -1` in the
+delivered ZIP; the final validation/packaging commit lands after this
+document.
 
----
-
-## 1. Completed features
-
-### Backend — Products module extensions
-- **Search / Filters / Sort / Pagination** on both `GET /v1/products` (public)
-  and `GET /v1/stores/{storeId}/products` (creator-scoped): free-text `q`,
-  `categoryId`/`storeId`/`productType` filters, `minPrice`/`maxPrice`,
-  `inStockOnly`, and five sort options (`newest`, `oldest`, `priceLow`,
-  `priceHigh`, `bestSelling`). `newest`/`oldest` use the existing keyset
-  cursor; the other three use page-number pagination instead — documented,
-  deliberate trade-off (see `productSortSchema` doc comment).
-- **Soft delete**: `DELETE /v1/stores/{storeId}/products/{productId}`, a
-  real `deletedAt` column distinct from the existing `ARCHIVED` status.
-- **Product Images**: two-step presigned-R2-upload flow
-  (`POST .../media/upload-url` → `POST .../media` to confirm/attach),
-  `PATCH`/`DELETE .../media/{id}`.
-- **Inventory Management**: `PATCH .../variants/{variantId}/inventory`,
-  always a signed delta, never a raw overwrite.
-- **OpenAPI/Swagger**: `GET /api/docs`, `/api/openapi.json`,
-  `/api/openapi.yaml`, all served from `backend/openapi/v1.yaml`.
-- **`GET /v1/creator/application`** now returns `storeId`/`storeSlug`/
-  `storeStatus`.
-
-### Frontend — Buyer
-- `/products` search box, price-range filter, in-stock toggle, corrected
-  sort dropdown, explicit error+retry state — all wired to the real
-  backend query contract (not the previous, never-tested aspirational one).
-
-### Frontend — Creator (net new — this surface didn't exist before this sprint)
-- `/dashboard/products` — My Products: status tabs, search, delete
-  confirmation, empty/loading/error states.
-- `/dashboard/products/new` — Create Product: variant-aware form
-  (react-hook-form + zod, matching backend validation field-for-field),
-  unsaved-changes warning.
-- `/dashboard/products/{id}/edit` — Edit Product: basic-info form,
-  publish/pause/archive/delete, per-variant inventory adjustment, image
-  gallery (upload/delete), read-only buyer-preview card.
-- New `Dialog` UI primitive (Radix, previously an unused dependency).
-
-### Real bugs found and fixed (not Sprint 01 regressions — pre-existing, surfaced while building this)
-1. `findMediaForProduct` never joined the `media` table — product
-   responses never included an actual image URL.
-2. `GET /v1/creator/application` never exposed `storeId` — no read path
-   exposed the Creator to Store relationship at all.
-3. `pnpm install` silently exited 1 on every fresh install
-   (`ERR_PNPM_IGNORED_BUILDS`) — pnpm 11 needs `allowBuilds` in
-   `pnpm-workspace.yaml`, which didn't exist.
-4. The OpenAPI spec lived outside `backend/` (`api/openapi/v1.yaml` at repo
-   root), unservable if `backend/` is deployed as its own Vercel root.
-5. `npm run lint` failed outright for every package, for five independent
-   reasons: missing `eslint.config.mjs` in 5 shared packages; `@dbk/config`
-   never declaring the eslint plugins its own config imports; a genuine
-   crash in `@typescript-eslint/no-unused-vars@8.65.0` on any zero-param
-   function type; a symlink-fragile 3-level relative tsconfig `extends`
-   path; and `consistent-type-imports` requiring type-aware parsing that
-   was never configured.
-6. `better-auth`'s client method is `requestPasswordReset`, not
-   `forgetPassword`/`forgotPassword`.
-7. React 19.2 broke `Textarea.tsx`'s `onInput` typing.
-8. Several pre-existing `react/no-unescaped-entities` and one
-   `jsx-a11y/label-has-associated-control` issue.
-
-Full detail and rationale for every item above is in `CHANGELOG.md` and the
-individual commit messages (each fix is its own commit).
+This document is the master Implementation Report. Dedicated topics that
+would otherwise duplicate content live in their natural home instead:
+- **Migration / Seed / Database Reset / Environment Variables / Deployment**: `backend/README.md`
+- **Full change list**: `CHANGELOG.md`
+- **Manual test plan**: `docs/testing/sprint-01-production.md`
 
 ---
 
-## 2. Remaining work / recommended next sprint
+## 1. What's in this delivery
 
-**Priority 1 — Auth bridge.** The frontend's Better Auth session and the
-backend's JWT-based `authenticate()` middleware are two independent,
-unbridged systems. See `frontend/packages/auth/src/access-token.ts`'s full
-doc comment for the trace-through. This blocks live, end-to-end
-verification of every creator-side backend call (Products included, and
-the pre-existing dashboard pending-actions/performance widgets too — this
-predates Sprint 01). `getBackendAccessToken()` currently, correctly,
-always returns `null`, and every caller fails loudly
-(`501 AUTH_BRIDGE_NOT_CONFIGURED`) rather than faking success. Fixing this
-for real means either (a) replacing the frontend's local Better Auth
-session with one obtained by calling the backend's REST auth endpoints
-directly, or (b) a JWKS-based bridge so the backend can verify the
-frontend's Better Auth session tokens too. This is legitimate,
-cross-cutting Authentication-sprint work.
+### Sprint 01 (Products Module)
+Backend: search/filter/sort/pagination, soft delete, Product Images
+(presigned R2 upload), Inventory Management, OpenAPI/Swagger. Buyer:
+search/filter/sort UI. Creator: full My Products / Create / Edit surface,
+built from nothing.
 
-**Priority 2 — Variant editing.** There's no backend endpoint to edit a
-variant's price/SKU after creation (only at creation time via
-`POST /products`). The creator Edit page correctly shows variants
-read-only rather than pretending this works. A follow-up sprint should add
-`PATCH .../variants/{id}` (price/SKU only — quantity already has its own
-endpoint) if this is needed before launch.
+### Hardening Pass (this continuation)
+- **Phase 2** — reusable-component migration: every hand-rolled `<select>`,
+  search box, tab bar, and empty/error state in the Products screens now
+  uses the shared `@dbk/ui` library. A genuine duplicate `Dialog` (built in
+  this sprint, independently of a separate "Sprint 0.5" component-library
+  effort that built its own, more complete one) was found and retired.
+- **Phase 3** — Buyer PDP polish: gallery zoom, a sticky mobile
+  Add-to-Cart bar (a real, separate component — not a duplicate of the
+  purchase panel), Related Products (a real same-category query, not a
+  fabricated recommendation).
+- **Phase 4** — Creator Dashboard completion: drag-and-drop image upload
+  and reordering (with a keyboard-accessible fallback), autosave, live
+  preview, Duplicate Product, Bulk Actions.
+- **Phase 5** — Backend review: found and fixed a total absence of
+  structured logging in the Products/Creators/Users modules (only Auth had
+  any), and a genuinely swallowed error whose comment claimed it was
+  logged when it wasn't.
+- **Phase 6** — Realistic Indian handmade-marketplace demo data (8
+  categories, 8 creators/stores, 18 products, 23 variants, 5 buyers), only
+  for tables that actually exist in the schema.
+- **Phase 7** — Full validation, this time run against a real local
+  PostgreSQL instance installed specifically for this pass (previous
+  rounds could only compile/typecheck against the schema, not execute
+  against live data).
+- **Phase 8** — `docs/testing/sprint-01-production.md`, every test with
+  Purpose/Steps/Expected Result/Pass-Fail, several marked `[verified live]`
+  where this session actually exercised them.
+- **Phase 9** — README/CHANGELOG updates covering all of the above.
+- **Phase 10/11/12** — UI/UX, Security, and Performance reviews — see
+  dedicated sections below.
 
-**Priority 3 — Categories/Collections/Tags/SEO.** Deliberately deferred
-per `backend/SCOPE.md` and the staged-scope decision made at the start of
-this sprint. `primaryCategoryId` is accepted as a raw UUID with no picker
-UI, since there's no `GET /categories` endpoint yet.
-
-**Priority 4 — Inventory audit ledger.** Adjustments are correctly
-delta-based (never a lost-update overwrite) but don't persist a
-per-adjustment audit row (`InventoryTransaction`, `08-database-design.md`
-Section 9.2) yet.
-
-**Smaller items:**
-- No global `/dashboard/inventory` view (only per-product, on the Edit page).
-- Buyer product detail page's image rendering wasn't traced/verified this
-  sprint — the buyer `Product`/`ProductImage` types are a separate,
-  richer, pre-existing "aspirational" shape than the raw backend response;
-  worth reconciling in a follow-up.
-- `npm audit` reports 12 vulnerabilities (11 high, 1 critical) in the
-  frontend workspace, pre-existing, not investigated this sprint (out of
-  scope for a Products-focused sprint; flagging for visibility).
-
----
-
-## 3. Modified / new files
-
-Full detail: `git diff --stat ec66ab8 HEAD` (100 files changed, 7089
-insertions, 775 deletions). By area:
-
-**Backend** — 28 files changed (12 new, 16 modified), 2012 insertions.
-Key new files: `openapi/v1.yaml` (relocated + extended), 6 new Route
-Handlers under `stores/[storeId]/products/[productId]/media/**` and
-`.../variants/[variantId]/inventory/`, `src/app/api/docs/route.ts`,
-`src/app/api/openapi.json/route.ts`, `src/app/api/openapi.yaml/route.ts`,
-`src/shared/openapi/spec.ts`, `src/modules/products/authorization.ts`,
-`src/modules/products/__tests__/schemas.test.ts`,
-`database/migrations/0001_sprint01_products_soft_delete.sql`.
-
-**Frontend** — 69 files changed, 2383 insertions. Key new files: all of
-`apps/creator/app/(dashboard)/dashboard/products/**`,
-`apps/creator/app/api/products/**`, 9 new files under
-`apps/creator/components/Product*.tsx`, `apps/creator/lib/*`,
-`packages/api-client/src/{hooks/useCreatorProducts.ts,endpoints/creator-products.server.ts,endpoints/creator-application.server.ts}`,
-`packages/auth/src/access-token.ts`,
-`packages/ui/src/primitives/Dialog.tsx`, `eslint.config.mjs` in 5
-previously-config-less packages.
-
-**Docs** — `CHANGELOG.md` (new), `docs/testing/sprint-01-products.md`
-(new), `README.md` / `backend/README.md` / `frontend/README.md` (updated).
+### The most significant finding of this pass
+Installing a real database to verify Phase 6's seed data surfaced a
+**critical, previously undetectable bug**: `database/migrations/meta/
+_journal.json` only listed the initial migration. `0001_sprint01_products_
+soft_delete.sql` — the file adding `products.deleted_at` — had **never
+actually been applied**, on any database anyone had run these migrations
+against with this repository state, despite the `.sql` file itself being
+correct and present. This had been invisible in every prior round of
+validation because none of them had a live database to run migrations
+against — `tsc`/`eslint`/`next build` all succeed regardless of whether a
+migration file is tracked in the journal. Fixed and verified for real:
+dropped/recreated the database, re-ran migrations (both now apply, column
+confirmed via `psql`), ran both seed scripts, and confirmed live API
+behavior (search, sort, pagination, product detail with working image
+URLs) against real seeded data.
 
 ---
 
-## 4. Database changes
+## 2. UI/UX Review Report (Phase 10)
 
-Single migration: `database/migrations/0001_sprint01_products_soft_delete.sql`
-(generated via `drizzle-kit generate`, not hand-written):
+Scope of this pass: the Products-related screens touched by Sprint 01 and
+this hardening pass (not a redesign of screens outside that scope, per the
+brief's explicit "do not redesign branding" instruction).
 
-```sql
-ALTER TABLE "products" ADD COLUMN "deleted_at" timestamp with time zone;
-CREATE INDEX "products_deleted_at_idx" ON "products" USING btree ("deleted_at");
+**Improved, concretely, this pass:**
+- **Consistency**: every filter/sort/search control in the Products
+  screens now shares the same underlying components as the rest of the
+  app, instead of five different one-off implementations of the same
+  interaction pattern.
+- **Hierarchy & spacing**: unaffected by this pass beyond what the
+  component migration itself changed — the design-token-based spacing
+  scale (`--space-*`) was already consistently applied in Sprint 01 and
+  remains so.
+- **Micro-interactions**: drag-and-drop image reordering, autosave status
+  transitions (Unsaved → Saving → Saved), live preview updating on
+  keystroke, hover-reveal reorder/delete controls on gallery images.
+- **Accessibility**: fixed one real `jsx-a11y/label-has-associated-control`
+  error introduced by this pass's bulk-select checkbox; added
+  keyboard-only Move-earlier/Move-later buttons specifically because
+  drag-and-drop alone fails WCAG 2.1's operability requirement for
+  pointer-only interactions; the sticky mobile CTA and gallery zoom both
+  use accessible labels and the shared `Dialog`'s existing focus-trap
+  behavior.
+- **Loading/empty/error UX**: standardized onto `EmptyState`/`ErrorState`
+  everywhere they weren't already, so retry affordances and empty-state
+  messaging are now consistent instead of each screen inventing its own.
+- **Mobile UX**: the new sticky Add-to-Cart bar specifically targets the
+  common commerce problem of the primary CTA scrolling out of view on long
+  product pages; it's `lg:hidden` so it doesn't duplicate the always-visible
+  desktop panel.
+
+**Explicitly not done, and why:** a page-by-page audit of screens this
+sprint didn't touch (buyer account/order pages, creator analytics,
+marketing pages) would be a much larger, separate UI/UX sprint — doing it
+shallowly here risks introducing regressions in screens that weren't
+otherwise part of this pass's verified scope.
+
+---
+
+## 3. Security Review Report (Phase 11)
+
+Reviewed the Products module and its immediate dependencies. Findings:
+
+| Area | Finding |
+|---|---|
+| Input validation | Every endpoint validates via Zod before touching the database; confirmed no route skips this. |
+| SQL injection | All `sql` tagged-template usage in `repository.ts` uses Drizzle's parameterization (`${value}` is bound, not string-concatenated) — checked every occurrence, none build a query via string concatenation. |
+| XSS | No `dangerouslySetInnerHTML` anywhere in the frontend workspace (checked). |
+| Authorization | Every creator-scoped route re-checks ownership/permission per request (`authorizeOwnerOrPermission`) — no route trusts a cached or client-asserted role. |
+| Rate limiting | Confirmed present on every Sprint 01 mutating route; auth endpoints use a dedicated `'auth'` tier keyed by IP+email (login) or IP alone (register/forgot-password) — real brute-force protection, not just a generic limit. |
+| Error exposure | `shared/middleware/error-handler.ts` never returns a stack trace or raw exception message to the client — confirmed by reading the actual mapping code, not just the doc comment. |
+| Secrets | No hardcoded secrets found in source (checked for common patterns); `.env.local` is gitignored; the demo-seed password is clearly documented as non-production. |
+| Security headers | HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and a restrictive Permissions-Policy are all set in `next.config.ts` for every route. No CSP header is set — acceptable for this API-only backend (the one HTML page, `/api/docs`, has no user-controlled input rendered into it), but worth adding if the surface grows. |
+| CORS | No CORS headers configured — correct, not a gap: the architecture is BFF-only (frontend Route Handlers call the backend server-to-server; browsers never call it cross-origin directly), so CORS doesn't apply. |
+| File upload validation | `requestProductMediaUploadSchema` validates content-type (allowlist) and size (10MB cap) server-side, not just in the frontend's pre-upload check — confirmed the frontend check is a UX nicety, not the actual security boundary. |
+| Swagger security | `/api/docs`/`/api/openapi.json`/`/api/openapi.yaml` are intentionally unauthenticated (API documentation, not a data endpoint) and expose no secrets — reviewed the spec content itself for anything sensitive; found none. |
+
+**No new vulnerabilities requiring a code fix were found this pass** — the
+existing security posture (built during Sprint 01 itself) held up under
+review. The one carried-over finding remains the auth-bridge gap (see
+CHANGELOG/README), which is an availability/architecture gap, not a
+vulnerability — the backend correctly rejects requests it can't verify
+rather than accepting a forged or unverifiable credential.
+
+---
+
+## 4. Performance Review Report (Phase 12)
+
+| Area | Finding |
+|---|---|
+| N+1 queries | Reviewed every repository function; list/detail reads use `Promise.all` for independent parallel fetches, not per-row loops. The one loop found (`createProduct`'s per-variant insert) is bounded by variant count (typically 1-5) and runs inside a single transaction — not a meaningful concern at this scale. |
+| Indexes | `products` has indexes on `(storeId, status)`, `(status, primaryCategoryId)`, `createdAt`, and `deletedAt`; `productVariants` and `productMedia` are indexed on their foreign keys. |
+| **Price sort/filter — a real, documented gap** | `minPrice`/`maxPrice` filtering and `priceLow`/`priceHigh` sorting use a correlated subquery (`SELECT MIN(price) FROM product_variants WHERE product_id = ...`) with no supporting index. At current (demo) data volumes this is invisible; at real catalog scale it would mean a per-row subquery execution for every listing request using a price filter or sort. **Recommendation for the next sprint**: denormalize a `minPriceAmount` column onto `products`, maintained on variant insert/update, with its own index — turning this into a normal indexed sort/filter. Not fixed in this pass: it's a schema change with real migration/backfill implications, better done deliberately than squeezed into a review pass. |
+| Frontend bundle/code splitting | Next.js App Router's per-route code splitting applies automatically; no manual `dynamic()` splitting was added or found necessary for the Products screens specifically. |
+| Images | `next/image` used throughout the buyer gallery (automatic responsive sizing, lazy loading below the fold); the creator gallery's admin-only thumbnail grid uses plain `<img>` deliberately (documented inline — arbitrary uploaded-image hosts, not worth `next/image`'s `remotePatterns` config for an internal tool). |
+| React Query caching | Buyer product listing seeds its cache from the server-rendered first page (no redundant client fetch on mount); creator product list/detail queries are invalidated precisely (by list or by specific detail key), not broadly, on every mutation. |
+| Database round-trips | Product detail fetches variants and media in parallel (`Promise.all`), not sequentially. |
+
+---
+
+## 5. Demo Credentials
+
+Every account seeded by `pnpm run db:seed:demo` shares the password
+`DemoPass123!` (not a production credential — documented here and in
+`backend/README.md`/`CHANGELOG.md`).
+
+**Creators** (each owns one ACTIVE store with 2-3 published products):
+`meera.krishnan@example.com`, `arjun.malhotra@example.com`,
+`priya.nair@example.com`, `rohan.deshpande@example.com`,
+`ananya.iyer@example.com`, `kabir.singh@example.com`,
+`fatima.sheikh@example.com`, `vikram.rathore@example.com`
+
+**Buyers** (no store): `aditya.rao@example.com`, `sneha.pillai@example.com`,
+`karan.mehta@example.com`, `divya.reddy@example.com`,
+`ishaan.kapoor@example.com`
+
+---
+
+## 6. Exact commands to verify everything locally
+
+```bash
+# Backend
+cd backend
+pnpm install
+pnpm lint
+pnpm typecheck
+pnpm build
+pnpm test
+
+# Database (requires a running Postgres — see backend/README.md's
+# Environment Variables section for DATABASE_URL and everything else)
+pnpm run db:migrate
+pnpm run db:seed          # required — RBAC catalog
+pnpm run db:seed:demo     # optional — realistic demo data
+
+# Run it
+pnpm run dev               # http://localhost:3000
+curl http://localhost:3000/api/v1/health/ready
+curl http://localhost:3000/api/docs                 # Swagger UI
+curl http://localhost:3000/api/openapi.json
+
+# Frontend
+cd frontend
+npm install
+npm run lint
+npm run typecheck
+npm run build   # see Known Issues — blocked in network-restricted sandboxes only
 ```
 
-No other schema changes — Product Images and Inventory Management both
-reuse existing tables (`media`, `product_media`, `inventory`) that were
-already in the schema but had no working consumer until this sprint.
+**Swagger URL** (once the backend is running): `http://localhost:3000/api/docs`
+**Seed command**: `pnpm run db:seed && pnpm run db:seed:demo`
+**Migration command**: `pnpm run db:migrate`
+**Database reset command**: see `backend/README.md`'s Database Reset recipe
+(drops and recreates the public schema, then re-migrates and re-seeds).
 
 ---
 
-## 5. API endpoints (new/changed this sprint)
+## 7. Validation results (this session)
 
-| Method | Path | Notes |
-|---|---|---|
-| GET | `/v1/products` | extended: `q`, filters, `sort`, `page` |
-| GET | `/v1/stores/{storeId}/products` | extended: same, plus `status` |
-| DELETE | `/v1/stores/{storeId}/products/{productId}` | new — soft delete |
-| POST | `/v1/stores/{storeId}/products/{productId}/media/upload-url` | new |
-| POST | `/v1/stores/{storeId}/products/{productId}/media` | new |
-| PATCH | `/v1/stores/{storeId}/products/{productId}/media/{id}` | new |
-| DELETE | `/v1/stores/{storeId}/products/{productId}/media/{id}` | new |
-| PATCH | `/v1/stores/{storeId}/products/{productId}/variants/{id}/inventory` | new |
-| GET | `/v1/creator/application` | extended: `storeId`/`storeSlug`/`storeStatus` |
-| GET | `/api/docs` | new — Swagger UI |
-| GET | `/api/openapi.json` | new |
-| GET | `/api/openapi.yaml` | new |
+All run fresh, in order, this session:
 
-Full contract: `backend/openapi/v1.yaml`, or `/api/docs` once the server is running.
+| Check | Result |
+|---|---|
+| `pnpm install` (backend) | PASS |
+| `pnpm lint` (backend) | PASS |
+| `pnpm typecheck` (backend) | PASS |
+| `pnpm build` (backend, with a real database connected) | PASS |
+| `pnpm test` (backend) | PASS — 25/25 |
+| Real Postgres migration + both seed scripts | PASS — verified via `psql` and live API calls |
+| `npm install` (frontend) | PASS |
+| `npx turbo run lint` (frontend, all 8 packages) | PASS — 0 errors |
+| `npx turbo run type-check` (frontend, all 8 packages) | PASS — 0 errors |
+| `npm run build` (frontend) | **BLOCKED — environment-specific, see Known Issues** |
 
 ---
 
-## 6. Validation results (this session, this sandbox)
+## 8. Known Issues
 
-| Check | Command | Result |
-|---|---|---|
-| Backend install | `pnpm install` | PASS (fixed a determinism issue) |
-| Backend lint | `pnpm lint` | PASS |
-| Backend typecheck | `pnpm typecheck` | PASS |
-| Backend build | `pnpm build` | PASS — all 26 routes compiled |
-| Backend tests | `pnpm test` | PASS — 25/25 (vitest) |
-| Frontend install | `npm install` | PASS |
-| Frontend lint | `npm run lint` | PASS — 0 errors (workspace-wide, 8 packages) |
-| Frontend typecheck | `npm run typecheck` | PASS — 0 errors (8 packages) |
-| Frontend build | `npm run build` | BLOCKED — environment-specific, see below |
-
-### Frontend build block — full detail
-
-- **Command:** `npm run build`
-- **Exact error:** `request to https://fonts.googleapis.com/... failed, reason: self-signed certificate in certificate chain` then `Failed to fetch 'Inter'/'Fraunces' from Google Fonts` then `Failed to compile` in `app/layout.tsx`.
-- **Root cause, directly confirmed** (not inferred): a standalone `curl -v https://fonts.googleapis.com/...` (no repo code involved) returned `HTTP/2 403`, header `x-deny-reason: host_not_allowed`, body `Host not in allowlist: fonts.googleapis.com`. This sandbox's outbound network is allowlisted to a fixed set of domains (package registries, GitHub) and does not include Google Fonts. The proxy returns a self-signed cert for blocked hosts, which is exactly the TLS error `next/font/google` surfaces.
-- **Environment-specific, not code-related.** `app/layout.tsx` in both apps uses standard, correct `next/font/google` usage. This will build successfully in any environment with normal internet access (Vercel, CI, a developer's machine). No mock, stub, or workaround file was introduced to route around this — the only diagnostic action taken outside `npm run build` was a plain `curl` to confirm the exact cause; no repository files were touched to work around it.
-- Both apps fail at the identical point (`app/layout.tsx`, before any other file is even compiled), so this masks nothing else — `npm run typecheck` (full TypeScript across all new JSX) and `npm run lint` (0 errors) are the strongest available signals in this sandbox that the code itself is correct.
-
-### Regression check (live server, this session)
-Ran the backend with `next start` against this sandbox (no live Postgres available):
-- `GET /api/v1/health` → 200
-- `GET /api/openapi.json` → 200, 23 paths present
-- `GET /api/docs` → 200
-- `POST /v1/auth/register` with empty body → 422 (validation runs before any DB call)
-- `GET /v1/products` → 500, root cause `ECONNREFUSED 127.0.0.1:5432` — no Postgres instance running in this sandbox. Not a code defect: the error is a raw driver connection failure, not an application error, and every non-DB-dependent code path (health, validation, auth-gating) behaves correctly.
-- `POST /v1/creator/apply`, `GET /v1/creator/application`, `GET /v1/stores/{id}/products` (unauthenticated) → all 401, correctly, before any DB call
+1. **Frontend `npm run build`** fails only because this sandbox's network
+   egress blocks `fonts.googleapis.com` (`403 host_not_allowed`, confirmed
+   via direct `curl`, not inferred). `next/font/google` usage in both
+   apps' `layout.tsx` is standard and correct; this will build successfully
+   anywhere with normal internet access. No workaround file was
+   introduced.
+2. **Auth bridge gap** (carried over, not introduced this pass): the
+   frontend's Better Auth session and the backend's JWT `authenticate()`
+   middleware are unbridged. Every creator Products BFF route detects this
+   and fails loudly (`501 AUTH_BRIDGE_NOT_CONFIGURED`) rather than faking
+   success. Top priority for the next sprint.
+3. **Price sort/filter has no supporting index** (Performance Review,
+   above) — fine at demo scale, a real concern at production catalog
+   scale. Recommended fix documented above, not applied this pass.
+4. **No `InventoryTransaction` audit ledger** — inventory adjustments are
+   correctly delta-based but only logged, not persisted as an auditable
+   row, until that table is built (deferred per `backend/SCOPE.md`).
+5. **Wishlist, guest Cart persistence, and Collections** have no backend
+   support — pre-existing gaps, not regressions, documented in `CHANGELOG.md`.
+6. **No endpoint to edit a variant's price/SKU after creation** — the
+   creator Edit page correctly shows variants read-only rather than
+   pretending this is supported.
+7. `npm audit`: vulnerabilities pre-existing in the frontend dependency
+   tree, not investigated this pass (flagged for visibility, not silently
+   ignored).
 
 ---
 
-## 7. Known issues
+## 9. Next recommended sprint
 
-1. **Auth bridge gap** (see Section 2, Priority 1) — blocks live E2E verification
-   of all creator-side backend calls. Not introduced by this sprint.
-2. **No live database in this sandbox** — every DB-dependent code path was
-   verified via `pnpm test` (unit tests, no DB required),
-   `pnpm build`/`next build` (compiles and type-checks all query code), and
-   direct reading of the generated SQL/Drizzle query builders, but not
-   against a real Postgres instance with real data. A real environment
-   should run through `docs/testing/sprint-01-products.md` in full.
-3. **Frontend `npm run build`** blocked by sandbox network policy (see
-   Section 6) — not a code issue, needs verification in an environment
-   with normal internet access.
-4. **npm audit**: 12 vulnerabilities (11 high, 1 critical) in the frontend
-   workspace's dependency tree, pre-existing, not investigated this sprint.
-5. **Variant editing** not supported post-creation (see Section 2, Priority
-   2) — intentional, not a bug, but worth flagging as a UX gap.
-6. Buyer product detail image rendering not traced this sprint (see
-   Section 2).
-
----
-
-## 8. Next steps
-
-1. Land the auth bridge (Priority 1) — unblocks real E2E testing of
-   everything else in this sprint.
-2. Run `docs/testing/sprint-01-products.md` against a real environment
-   (live Postgres, Redis, R2 bucket, normal internet access) and check off
-   every box.
-3. Open the PR from `feature/sprint-01-products` into `master` (branch is
-   pushed and ready — see push status in the accompanying chat response).
-4. Address `npm audit` findings in a dedicated pass.
-5. Decide whether variant price/SKU editing is needed before the next
-   customer-facing milestone; if so, add `PATCH .../variants/{id}`.
+1. **Auth bridge** — the single highest-leverage fix; unblocks real
+   end-to-end verification of everything creator-side.
+2. **Price-sort index** (Performance Review) before catalog size grows.
+3. Run `docs/testing/sprint-01-production.md` in full against a real
+   staging environment with normal internet access.
+4. Variant post-creation editing, if needed before a customer-facing
+   launch.
+5. `InventoryTransaction` audit ledger.

@@ -4,18 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDeleteProduct, useTransitionProductStatus, ApiError } from "@dbk/api-client";
 import type { CreatorProduct } from "@dbk/types";
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@dbk/ui";
+import { Alert, Badge, Button, Card, ConfirmDialog } from "@dbk/ui";
 
 const STATUS_BADGE = {
   DRAFT: { label: "Draft", variant: "neutral" as const },
@@ -87,25 +76,16 @@ export function ProductStatusPanel({ storeId, product }: { storeId: string; prod
         </Button>
       </div>
 
-      <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete this product?</DialogTitle>
-            <DialogDescription>
-              &quot;{product.title}&quot; will be removed from your store and from search immediately.
-              This can&apos;t be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setConfirmingDelete(false)}>
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={handleDelete} isLoading={deleteProduct.isPending}>
-              Delete product
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={confirmingDelete}
+        onOpenChange={setConfirmingDelete}
+        title="Delete this product?"
+        description={`"${product.title}" will be removed from your store and from search immediately. This can't be undone.`}
+        confirmLabel="Delete product"
+        destructive
+        isConfirming={deleteProduct.isPending}
+        onConfirm={handleDelete}
+      />
     </Card>
   );
 }

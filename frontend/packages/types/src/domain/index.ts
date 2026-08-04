@@ -139,3 +139,54 @@ export interface CreatorPerformanceSummary {
   conversionRate: number;
   averageRating: number | null;
 }
+
+/**
+ * Sprint 01 — creator-side Product types. Deliberately a separate shape
+ * from `Product`/`ProductSummary` above: those model the buyer-facing,
+ * aspirational catalog view (rating, reviewCount, creator info) that the
+ * backend doesn't fully populate yet. These mirror exactly what
+ * modules/products/service.ts's getProductDetail/listProductsForStore
+ * actually return, since creator tooling reads and writes the real shape,
+ * not a display-optimized projection of it.
+ */
+export type ProductStatus = "DRAFT" | "PENDING_APPROVAL" | "ACTIVE" | "PAUSED" | "ARCHIVED" | "REJECTED";
+export type ProductType = "READY_MADE" | "MADE_TO_ORDER";
+
+export interface CreatorProductVariant {
+  id: Id;
+  attributes: Record<string, string>;
+  priceAmount: number;
+  priceCurrency: string;
+  skuReference: string | null;
+  status: string;
+  quantityAvailable: number | null;
+  quantityReserved: number | null;
+  lowStockThreshold: number | null;
+}
+
+export interface CreatorProductMedia {
+  id: Id;
+  mediaId: Id;
+  variantId: Id | null;
+  displayOrder: number;
+  isPrimary: boolean;
+  publicUrl: string | null;
+  altText: string | null;
+  mimeType: string;
+}
+
+export interface CreatorProduct {
+  id: Id;
+  storeId: Id;
+  title: string;
+  slug: string;
+  description: string;
+  productType: ProductType;
+  leadTimeDays: number | null;
+  primaryCategoryId: Id | null;
+  status: ProductStatus;
+  createdAt: string;
+  updatedAt: string;
+  variants?: CreatorProductVariant[];
+  media?: CreatorProductMedia[];
+}

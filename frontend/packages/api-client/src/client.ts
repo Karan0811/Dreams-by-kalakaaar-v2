@@ -7,6 +7,10 @@ export interface RequestOptions extends Omit<RequestInit, "body"> {
   /** Attached to mutating requests per 09-api-architecture.md's idempotency
    * contract; only idempotent requests are safe to auto-retry (§10.7). */
   idempotencyKey?: string;
+  /** Next.js's fetch cache extension. Typed explicitly here (rather than via
+   * casts to `RequestInit` at each call site) since this package has no
+   * Next.js app's ambient type augmentation of the global `fetch`/`RequestInit`
+   * types to fall back on. */
   next?: {
     revalidate?: number | false;
     tags?: string[];

@@ -27,7 +27,7 @@ export function CartView() {
         <div>
           <p className="text-[16px] font-medium text-text-primary">Your cart is empty</p>
           <p className="mt-1 text-[14px] text-text-secondary">
-            Browse the catalog to find something you'll love.
+            Browse the catalog to find something you&apos;ll love.
           </p>
         </div>
         <Button asChild>
