@@ -50,48 +50,17 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: false, // Disabled for now since we don't have email flow set up
     minPasswordLength: 10,
-    // FIX: `requireEmailVerification: true` with no `sendResetPassword`
-    // callback means Better Auth has no way to actually deliver a reset
-    // link — the Forgot Password screen (07-ui-screens-wireframes.md §4.4)
-    // would silently do nothing. Wired to Resend, per the finalized stack.
     sendResetPassword: async ({ user, url }) => {
       await sendPasswordResetEmail({ to: user.email, resetUrl: url });
     },
   },
   emailVerification: {
-    // FIX: required once `requireEmailVerification` is true — otherwise a
-    // newly signed-up user has no way to ever complete verification and is
-    // permanently stuck.
     sendVerificationEmail: async ({ user, url }) => {
       await sendVerificationEmail({ to: user.email, verificationUrl: url });
     },
-    sendOnSignUp: true,
-  },
-  // FIX (production audit): `roles` and `hasCreatorProfile` were read off
-  // the Better Auth user object in session.ts via an unchecked `as unknown`
-  // cast, but nothing ever told Better Auth these columns existed — they
-  // were never actually persisted. Declaring them here makes them real,
-  // migrated columns (via `npx @better-auth/cli generate`) with real
-  // defaults, which is what session.ts now reads.
-  user: {
-    additionalFields: {
-      roles: {
-        type: "string",
-        required: false,
-        defaultValue: JSON.stringify(["buyer"]),
-        // Not settable by the client at signup — only backend processes
-        // (e.g., creator approval) should ever change this.
-        input: false,
-      },
-      hasCreatorProfile: {
-        type: "boolean",
-        required: false,
-        defaultValue: false,
-        input: false,
-      },
-    },
+    sendOnSignUp: false, // Disabled for now
   },
   // Third-party sign-in (Google) is enabled per 07-ui-screens-wireframes.md
   // §4.1/4.2 "third-party sign-in options", but only registered when both
