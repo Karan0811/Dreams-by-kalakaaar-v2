@@ -1,7 +1,0 @@
-{
-  "extends": "@dbk/config/typescript/base",
-  "compilerOptions": {
-    "outDir": "dist"
-  },
-  "include": ["src"]
-}
