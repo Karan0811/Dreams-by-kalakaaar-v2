@@ -8,6 +8,13 @@
       "when": 1785315515923,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785397307540,
+      "tag": "0001_sprint01_products_soft_delete",
+      "breakpoints": true
     }
   ]
 }

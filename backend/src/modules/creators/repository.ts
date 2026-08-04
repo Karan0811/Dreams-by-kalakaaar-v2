@@ -11,6 +11,19 @@ export async function findCreatorByUserId(userId: string) {
   return row ?? null;
 }
 
+/**
+ * Sprint 01 addition: every creator-scoped Products route
+ * (`/v1/stores/{storeId}/products/...`) needs the caller's `storeId`, but
+ * nothing previously exposed the Creator→Store relationship on a read path
+ * — `createCreatorApplication` below creates both rows together, but
+ * `GET /v1/creator/application` only ever returned the Creator row. This
+ * is additive: the Store row already existed the whole time.
+ */
+export async function findStoreByCreatorId(creatorId: string) {
+  const [row] = await db.select().from(stores).where(eq(stores.creatorId, creatorId)).limit(1);
+  return row ?? null;
+}
+
 function slugify(name: string): string {
   return name
     .toLowerCase()

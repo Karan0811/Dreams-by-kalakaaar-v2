@@ -23,5 +23,13 @@ export async function applyAsCreator(userId: string, input: ApplyAsCreatorInput)
 export async function getMyApplication(userId: string) {
   const creator = await creatorsRepository.findCreatorByUserId(userId);
   if (!creator) throw new CreatorApplicationNotFoundError();
-  return creator;
+
+  // Sprint 01: the Store row is created in the same transaction as the
+  // Creator row (see createCreatorApplication above), so this should never
+  // be null for an existing creator — but a caller (the Products module's
+  // ownership check) still handles a null store defensively rather than
+  // assuming this invariant holds forever.
+  const store = await creatorsRepository.findStoreByCreatorId(creator.id);
+
+  return { creator, store };
 }

@@ -5,7 +5,9 @@ export {
   signIn,
   signUp,
   signOut,
-  useSession
+  useSession,
+  requestPasswordReset,
+  resetPassword,
 } from "./auth-client";
 
 export {

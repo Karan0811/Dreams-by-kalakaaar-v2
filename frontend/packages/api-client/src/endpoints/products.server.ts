@@ -14,12 +14,12 @@ export async function fetchProductList(params: ProductListParams): Promise<Produ
   return apiFetch<ProductListResponse>(`/products?${search.toString()}`, {
     method: "GET",
     next: { revalidate: 60 }, // matches the ISR window, §9.10
-  } as RequestInit);
+  });
 }
 
 export async function fetchProductBySlug(slug: string): Promise<ProductDetailResponse> {
   return apiFetch<ProductDetailResponse>(`/products/${slug}`, {
     method: "GET",
     next: { revalidate: 300 },
-  } as RequestInit);
+  });
 }

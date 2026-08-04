@@ -42,6 +42,14 @@ export interface PaginationEnvelope<T> {
     hasMore: boolean;
     limit: number;
     totalCount?: number;
+    /**
+     * Sprint 01 — populated only for listing endpoints/sorts that use
+     * page-number pagination instead of the keyset cursor above (see
+     * `modules/products/schemas.ts`'s `productSortSchema` doc comment).
+     * `null` for every cursor-paginated response.
+     */
+    page?: number | null;
+    totalPages?: number | null;
   };
 }
 

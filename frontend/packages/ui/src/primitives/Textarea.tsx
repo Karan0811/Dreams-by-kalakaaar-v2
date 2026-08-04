@@ -3,19 +3,14 @@
 import * as React from "react";
 import { cn } from "@dbk/utils";
 
-export interface TextareaProps
-  extends Omit<
-    React.TextareaHTMLAttributes<HTMLTextAreaElement>,
-    "onInput"
-  > {
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   hasError?: boolean;
-  onInput?: React.FormEventHandler<HTMLTextAreaElement>;
 }
 
 /** Auto-expanding up to a max height, then scrolls, per §14's Textarea row. */
 export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, hasError, onInput, ...props }, ref) => {
-    const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const handleInput = (e: React.InputEvent<HTMLTextAreaElement>) => {
       const el = e.currentTarget;
       el.style.height = "auto";
       el.style.height = `${Math.min(el.scrollHeight, 320)}px`;

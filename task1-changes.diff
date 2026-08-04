@@ -1,0 +1,238 @@
+diff --git a/backend/src/modules/products/repository.ts b/backend/src/modules/products/repository.ts
+index ef83f8b..1532209 100644
+--- a/backend/src/modules/products/repository.ts
++++ b/backend/src/modules/products/repository.ts
+@@ -1,6 +1,16 @@
+-import { and, asc, desc, eq, ilike, isNull, lt, gt, or, sql } from 'drizzle-orm';
++import { and, asc, desc, eq, ilike, inArray, isNull, lt, gt, or, sql } from 'drizzle-orm';
+ import { db, withTransaction } from '@/shared/db/client';
+-import { inventory, media, productMedia, productVariants, products, stores } from '@/shared/db/schema';
++import {
++  categories,
++  creators,
++  inventory,
++  media,
++  productMedia,
++  productVariants,
++  products,
++  stores,
++  userProfiles,
++} from '@/shared/db/schema';
+ import type {
+   AdjustInventoryInput,
+   AttachProductMediaInput,
+@@ -346,7 +356,194 @@ export async function listProductsForStore(storeId: string, query: ListStoreProd
+ /** Public listing: ACTIVE only, optionally filtered by category/store/search/price/stock. */
+ export async function listPublicProducts(query: ListProductsQuery) {
+   const scopeCondition = eq(products.status, 'ACTIVE');
+-  return runProductListQuery(scopeCondition, query);
++  const result = await runProductListQuery(scopeCondition, query);
++  return { ...result, data: await enrichProductsForPublicResponse(result.data) };
++}
++
++/**
++ * Builds the buyer-facing "ProductSummary"/"Product" contract
++ * (`@dbk/types`'s `Product`/`ProductSummary`) from a batch of raw
++ * `products` rows.
++ *
++ * BUG FIX: `runProductListQuery` (and, before this fix, `listPublicProducts`
++ * directly) only ever selected bare `products` columns — no price, image,
++ * creator, or availability data existed anywhere in the response. Every
++ * layer above this (service, route handler, the frontend's `apiFetch<T>`)
++ * passed that raw row straight through with a *type* claiming it was a
++ * `ProductSummary`, but nothing ever actually constructed one — the type
++ * assertion was simply false, unchecked at runtime, until `ProductCard`
++ * crashed on `product.images[0]`. This is the actual construction step
++ * that was always missing.
++ *
++ * Batches every join by the input rows' ids/storeIds/categoryIds (not a
++ * per-row query) — safe for a page of up to 100 products, matching
++ * `listProductsQuerySchema`'s `limit` cap.
++ *
++ * Fields with no backing column anywhere in the schema (materials, tags,
++ * customizationFields, creator.isVerified, creator.city/bannerUrl,
++ * category.imageUrl, compareAtPrice) are set to their honest "nothing
++ * tracked yet" value (empty array / null / false) rather than omitted —
++ * omitting them would just move this same crash to whichever field a
++ * caller reads next. None of Materials/Tags/Customization/Reviews modules
++ * are built yet (`backend/SCOPE.md`); `isHandmade: true` is not a filler
++ * value, it's a true, platform-wide invariant of this marketplace.
++ */
++export async function enrichProductsForPublicResponse<T extends typeof products.$inferSelect>(
++  rows: T[],
++): Promise<Array<T & PublicProductFields>> {
++  if (rows.length === 0) return [];
++
++  const productIds = rows.map((r) => r.id);
++  const storeIds = [...new Set(rows.map((r) => r.storeId))];
++  const categoryIds = [...new Set(rows.map((r) => r.primaryCategoryId).filter((id): id is string => Boolean(id)))];
++
++  const [priceRows, imageRows, stockRows, storeRows, categoryRows] = await Promise.all([
++    db
++      .select({
++        productId: productVariants.productId,
++        minPriceAmount: sql<number>`min(${productVariants.priceAmount})::int`,
++        priceCurrency: sql<string>`min(${productVariants.priceCurrency})`,
++      })
++      .from(productVariants)
++      .where(inArray(productVariants.productId, productIds))
++      .groupBy(productVariants.productId),
++
++    db
++      .select({
++        productId: productMedia.productId,
++        url: media.publicUrl,
++        altText: media.altText,
++        displayOrder: productMedia.displayOrder,
++        isPrimary: productMedia.isPrimary,
++        mediaId: productMedia.mediaId,
++      })
++      .from(productMedia)
++      .innerJoin(media, eq(productMedia.mediaId, media.id))
++      .where(inArray(productMedia.productId, productIds))
++      .orderBy(productMedia.displayOrder),
++
++    db
++      .select({
++        productId: productVariants.productId,
++        anyInStock: sql<boolean>`bool_or(${inventory.quantityAvailable} > 0)`,
++        anyLowStock: sql<boolean>`bool_or(${inventory.quantityAvailable} <= ${inventory.lowStockThreshold})`,
++      })
++      .from(productVariants)
++      .leftJoin(inventory, eq(productVariants.id, inventory.variantId))
++      .where(inArray(productVariants.productId, productIds))
++      .groupBy(productVariants.productId),
++
++    db
++      .select({
++        storeId: stores.id,
++        storeSlug: stores.slug,
++        storeName: stores.name,
++        storeTagline: stores.tagline,
++        avatarUrl: media.publicUrl,
++      })
++      .from(stores)
++      .innerJoin(creators, eq(stores.creatorId, creators.id))
++      .leftJoin(userProfiles, eq(creators.userId, userProfiles.userId))
++      .leftJoin(media, eq(userProfiles.avatarMediaId, media.id))
++      .where(inArray(stores.id, storeIds)),
++
++    categoryIds.length > 0
++      ? db.select().from(categories).where(inArray(categories.id, categoryIds))
++      : Promise.resolve([]),
++  ]);
++
++  const priceByProduct = new Map(priceRows.map((r) => [r.productId, r]));
++  const stockByProduct = new Map(stockRows.map((r) => [r.productId, r]));
++  const storeById = new Map(storeRows.map((r) => [r.storeId, r]));
++  const categoryById = new Map(categoryRows.map((r) => [r.id, r]));
++  const imagesByProduct = new Map<string, typeof imageRows>();
++  for (const image of imageRows) {
++    const list = imagesByProduct.get(image.productId) ?? [];
++    list.push(image);
++    imagesByProduct.set(image.productId, list);
++  }
++
++  return rows.map((row) => {
++    const price = priceByProduct.get(row.id);
++    const stock = stockByProduct.get(row.id);
++    const store = storeById.get(row.storeId);
++    const category = row.primaryCategoryId ? categoryById.get(row.primaryCategoryId) : undefined;
++    const productImages = (imagesByProduct.get(row.id) ?? []).sort(
++      (a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0) || a.displayOrder - b.displayOrder,
++    );
++
++    const availability: PublicProductFields['availability'] =
++      row.productType === 'MADE_TO_ORDER'
++        ? 'made_to_order'
++        : !stock?.anyInStock
++          ? 'sold_out'
++          : stock.anyLowStock
++            ? 'low_stock'
++            : 'in_stock';
++
++    return {
++      ...row,
++      price: { amountMinor: price?.minPriceAmount ?? 0, currency: (price?.priceCurrency ?? 'INR') as 'INR' },
++      compareAtPrice: null,
++      images: productImages.map((img, index) => ({
++        id: img.mediaId,
++        url: img.url ?? '',
++        altText: img.altText ?? row.title,
++        position: index,
++      })),
++      creator: {
++        id: row.storeId,
++        slug: store?.storeSlug ?? '',
++        displayName: store?.storeName ?? '',
++        avatarUrl: store?.avatarUrl ?? null,
++        bannerUrl: null, // no store banner-image column exists yet
++        tagline: store?.storeTagline ?? null,
++        isVerified: false, // no creator-verification system exists yet — honest default, not a filler value
++        city: null, // creators/stores don't track a display city yet
++      },
++      category: category
++        ? { id: category.id, slug: category.slug, name: category.name, parentId: category.parentId, imageUrl: null }
++        : { id: '', slug: '', name: '', parentId: null, imageUrl: null },
++      availability,
++      // reviewCount/averageRating are real denormalized columns
++      // (08-database-design.md §2.3), but no Reviews module exists yet to
++      // ever write to them (backend/SCOPE.md) — they're always 0 today.
++      // No ×N scaling convention is documented anywhere for averageRating,
++      // so this passes it through as-is rather than guessing one.
++      rating: row.reviewCount > 0 ? row.averageRating : null,
++      reviewCount: row.reviewCount,
++      isHandmade: true, // every listing on this platform is handmade by definition, not a placeholder
++      shortDescription: row.description.length > 140 ? `${row.description.slice(0, 137)}...` : row.description,
++      customizationFields: [], // CustomizationOption/Value are deferred (backend/SCOPE.md) — genuinely none exist yet
++      materials: [], // ProductMaterial is deferred — genuinely none tracked yet
++      tags: [], // ProductTag is deferred — genuinely none tracked yet
++    };
++  });
++}
++
++interface PublicProductFields {
++  price: { amountMinor: number; currency: 'INR' };
++  compareAtPrice: null;
++  images: { id: string; url: string; altText: string; position: number }[];
++  creator: {
++    id: string;
++    slug: string;
++    displayName: string;
++    avatarUrl: string | null;
++    bannerUrl: string | null;
++    tagline: string | null;
++    isVerified: boolean;
++    city: string | null;
++  };
++  category: { id: string; slug: string; name: string; parentId: string | null; imageUrl: string | null };
++  availability: 'in_stock' | 'low_stock' | 'made_to_order' | 'sold_out';
++  rating: number | null;
++  reviewCount: number;
++  isHandmade: boolean;
++  shortDescription: string;
++  customizationFields: never[];
++  materials: never[];
++  tags: never[];
+ }
+ 
+ export async function countVariantsMissingInventory(productId: string): Promise<number> {
+diff --git a/backend/src/modules/products/service.ts b/backend/src/modules/products/service.ts
+index 4e2c067..729c524 100644
+--- a/backend/src/modules/products/service.ts
++++ b/backend/src/modules/products/service.ts
+@@ -68,11 +68,9 @@ export async function getPublicProductDetail(idOrSlug: string) {
+   const product = await productsRepository.findPublicProductByIdOrSlug(idOrSlug);
+   if (!product) throw new ProductNotFoundError();
+ 
+-  const [variants, media] = await Promise.all([
+-    productsRepository.findVariantsForProduct(product.id),
+-    productsRepository.findMediaForProduct(product.id),
+-  ]);
+-  return { ...product, variants, media };
++  const [enriched] = await productsRepository.enrichProductsForPublicResponse([product]);
++  if (!enriched) throw new ProductNotFoundError();
++  return enriched;
+ }
+ 
+ export async function updateProduct(productId: string, input: UpdateProductInput) {

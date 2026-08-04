@@ -52,7 +52,7 @@ export function DashboardOverview() {
             })}
           </div>
         ) : (
-          <Card className="text-[14px] text-text-secondary">You're all caught up — no pending actions.</Card>
+          <Card className="text-[14px] text-text-secondary">You&apos;re all caught up — no pending actions.</Card>
         )}
       </section>
 

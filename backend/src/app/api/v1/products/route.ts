@@ -13,11 +13,5 @@ export const GET = withRouteHandler(async ({ request, correlationId }) => {
 
   const result = await productsService.listPublicProducts(query);
 
-  return jsonCollection(
-    {
-      data: result.data,
-      pagination: { nextCursor: result.nextCursor, hasMore: result.hasMore, limit: query.limit },
-    },
-    { correlationId, rateLimit },
-  );
+  return jsonCollection({ data: result.data, pagination: result.pagination }, { correlationId, rateLimit });
 });

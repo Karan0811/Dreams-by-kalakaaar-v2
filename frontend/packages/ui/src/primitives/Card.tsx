@@ -19,11 +19,10 @@ export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDiv
   return <div className={cn("mb-[var(--space-150)] flex flex-col gap-1", className)} {...props} />;
 }
 
-export function CardTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn("font-sans text-[16px] font-medium text-text-primary", className)} {...props}>
-      {children}
-    </h3>
+    // eslint-disable-next-line jsx-a11y/heading-has-content -- content is always provided via `...props`/children at the call site; this is a reusable, content-less primitive by design.
+    <h3 className={cn("font-sans text-[16px] font-medium text-text-primary", className)} {...props} />
   );
 }
 

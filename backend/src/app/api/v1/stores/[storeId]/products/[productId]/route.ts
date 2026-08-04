@@ -1,24 +1,14 @@
 import { withRouteHandler } from '@/shared/middleware/compose';
 import { authenticate } from '@/shared/middleware/authenticate';
-import { authorizeOwnerOrPermission } from '@/shared/middleware/authorize';
 import { enforceRateLimit } from '@/shared/middleware/rate-limit';
-import { jsonResource } from '@/shared/http/response';
-import {
-  productStatusTransitionSchema,
-  updateProductSchema,
-} from '@/modules/products/schemas';
-import { StoreNotFoundError } from '@/modules/products/errors';
+import { jsonNoContent, jsonResource } from '@/shared/http/response';
+import { productStatusTransitionSchema, updateProductSchema } from '@/modules/products/schemas';
+import { requireStoreProductOwnership } from '@/modules/products/authorization';
 import * as productsService from '@/modules/products/service';
-
-async function requireStoreOwnership(userId: string, storeId: string, permission: string) {
-  const ownerUserId = await productsService.getStoreOwnerUserId(storeId);
-  if (!ownerUserId) throw new StoreNotFoundError();
-  await authorizeOwnerOrPermission(userId, { ownerId: ownerUserId, fallbackPermission: permission, storeId });
-}
 
 export const GET = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
-  await requireStoreOwnership(auth.userId, params.storeId as string, 'products:read');
+  await requireStoreProductOwnership(auth.userId, params.storeId as string, 'products:read');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   const product = await productsService.getProductDetail(params.productId as string);
@@ -28,7 +18,7 @@ export const GET = withRouteHandler(async ({ request, correlationId, params }) =
 
 export const PATCH = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
-  await requireStoreOwnership(auth.userId, params.storeId as string, 'products:write');
+  await requireStoreProductOwnership(auth.userId, params.storeId as string, 'products:write');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   const rawBody = await request.json();
@@ -51,4 +41,22 @@ export const PATCH = withRouteHandler(async ({ request, correlationId, params })
   const product = await productsService.updateProduct(params.productId as string, body);
 
   return jsonResource(product, { correlationId, rateLimit });
+});
+
+/**
+ * Soft delete — Sprint 01. Sets `deletedAt`; the row is preserved (order
+ * history, if any, may still reference it) but disappears from every
+ * creator- and buyer-facing query from this point on. This is deliberately
+ * a hard "remove the listing" action, distinct from the PATCH-driven
+ * `ARCHIVED` status above (a creator can un-archive; a creator cannot
+ * un-delete through this API).
+ */
+export const DELETE = withRouteHandler(async ({ request, correlationId, params }) => {
+  const auth = await authenticate(request);
+  await requireStoreProductOwnership(auth.userId, params.storeId as string, 'products:write');
+  const rateLimit = await enforceRateLimit('standard', auth.userId);
+
+  await productsService.deleteProduct(params.productId as string);
+
+  return jsonNoContent({ correlationId, rateLimit });
 });

@@ -66,12 +66,24 @@ export const products = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
+    /**
+     * Sprint 01 — soft delete, distinct from `archivedAt`/`status: ARCHIVED`.
+     * ARCHIVED is a creator-visible lifecycle state (a paused-forever
+     * listing the creator can still see and, in principle, un-archive).
+     * `deletedAt` means the creator removed the listing entirely — it must
+     * never appear in any creator- or buyer-facing query again, matching
+     * the `deletedAt` convention already used for Users
+     * (`shared/db/schema/identity.ts`). Every repository read in this
+     * module filters `isNull(products.deletedAt)`.
+     */
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [
     uniqueIndex('products_store_slug_unique_idx').on(table.storeId, table.slug),
     index('products_store_status_idx').on(table.storeId, table.status),
     index('products_status_category_idx').on(table.status, table.primaryCategoryId),
     index('products_created_at_idx').on(table.createdAt),
+    index('products_deleted_at_idx').on(table.deletedAt),
   ],
 );
 

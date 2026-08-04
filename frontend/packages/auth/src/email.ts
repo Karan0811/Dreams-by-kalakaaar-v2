@@ -22,7 +22,6 @@ export async function sendVerificationEmail({
   verificationUrl: string;
 }): Promise<void> {
   if (!resend) {
-    // eslint-disable-next-line no-console
     console.warn(
       `[email:dev-fallback] RESEND_API_KEY is not set — verification link for ${to}: ${verificationUrl}`,
     );
@@ -45,7 +44,6 @@ export async function sendPasswordResetEmail({
   resetUrl: string;
 }): Promise<void> {
   if (!resend) {
-    // eslint-disable-next-line no-console
     console.warn(`[email:dev-fallback] RESEND_API_KEY is not set — reset link for ${to}: ${resetUrl}`);
     return;
   }

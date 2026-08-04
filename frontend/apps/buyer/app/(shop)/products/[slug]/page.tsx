@@ -7,6 +7,8 @@ import { formatMoney } from "@dbk/utils";
 import { Avatar, AvailabilityStatusBadge, Badge } from "@dbk/ui";
 import { ProductGallery } from "@/components/ProductGallery";
 import { ProductPurchasePanel } from "@/components/ProductPurchasePanel";
+import { RelatedProducts } from "@/components/RelatedProducts";
+import { StickyAddToCartBar } from "@/components/StickyAddToCartBar";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -30,7 +32,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const product = result.data;
 
   return (
-    <div className="mx-auto max-w-(--container-content-xl) px-[var(--space-200)] py-[var(--space-400)] lg:px-[var(--space-600)]">
+    <div className="mx-auto max-w-(--container-content-xl) px-[var(--space-200)] py-[var(--space-400)] pb-24 lg:px-[var(--space-600)] lg:pb-[var(--space-400)]">
       <nav aria-label="Breadcrumb" className="mb-[var(--space-300)] text-[13px] text-text-secondary">
         <Link href="/" className="hover:text-text-link">Home</Link>
         <span className="mx-1.5" aria-hidden>/</span>
@@ -77,7 +79,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           ) : null}
 
-          <ProductPurchasePanel product={product} />
+          <div id="purchase-panel">
+            <ProductPurchasePanel product={product} />
+          </div>
 
           <div className="border-t border-border pt-[var(--space-300)]">
             <h2 className="text-[14px] font-medium text-text-primary">Description</h2>
@@ -98,6 +102,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
           ) : null}
         </div>
       </div>
+
+      <RelatedProducts categoryId={product.category.id} excludeProductId={product.id} />
+
+      <StickyAddToCartBar product={product} />
     </div>
   );
 }

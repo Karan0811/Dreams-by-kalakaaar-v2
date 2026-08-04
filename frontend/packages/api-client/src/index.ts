@@ -15,4 +15,5 @@ export * from "./query-keys";
 export * from "./hooks/useProducts";
 export * from "./hooks/useCart";
 export * from "./hooks/useCreatorDashboard";
+export * from "./hooks/useCreatorProducts";
 export { useOptimisticMutation, type OptimisticMutationConfig } from "./hooks/useOptimisticMutation";

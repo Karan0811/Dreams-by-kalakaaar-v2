@@ -3,7 +3,7 @@ import { authenticate } from '@/shared/middleware/authenticate';
 import { authorizeOwnerOrPermission } from '@/shared/middleware/authorize';
 import { enforceRateLimit } from '@/shared/middleware/rate-limit';
 import { jsonCollection, jsonResource } from '@/shared/http/response';
-import { createProductSchema, listProductsQuerySchema } from '@/modules/products/schemas';
+import { createProductSchema, listStoreProductsQuerySchema } from '@/modules/products/schemas';
 import { StoreNotFoundError } from '@/modules/products/errors';
 import * as productsService from '@/modules/products/service';
 
@@ -49,15 +49,9 @@ export const GET = withRouteHandler(async ({ request, correlationId, params }) =
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   const { searchParams } = new URL(request.url);
-  const query = listProductsQuerySchema.parse(Object.fromEntries(searchParams));
+  const query = listStoreProductsQuerySchema.parse(Object.fromEntries(searchParams));
 
   const result = await productsService.listStoreProducts(storeId, query);
 
-  return jsonCollection(
-    {
-      data: result.data,
-      pagination: { nextCursor: result.nextCursor, hasMore: result.hasMore, limit: query.limit },
-    },
-    { correlationId, rateLimit },
-  );
+  return jsonCollection({ data: result.data, pagination: result.pagination }, { correlationId, rateLimit });
 });
