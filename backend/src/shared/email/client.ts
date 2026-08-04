@@ -6,13 +6,11 @@ const logger = createModuleLogger('email');
 
 /**
  * Transactional email client — 10-backend-architecture.md Section 15.1
- * (Resend). A thin, direct `fetch` wrapper rather than the `resend` SDK
- * package: the SDK adds no capability this module needs and keeping the
- * HTTP contract explicit here makes the retry/error-mapping behavior
- * auditable in one place.
+ * Supports both Resend (API) and Gmail SMTP. Provider selection via
+ * EMAIL_PROVIDER environment variable ('resend' or 'gmail').
  *
  * In `development`, sends are logged instead of dispatched unless
- * `RESEND_API_KEY` is set, so local/CI runs never require a live API key.
+ * provider credentials are set, so local/CI runs never require live credentials.
  */
 export interface SendEmailParams {
   to: string;
@@ -20,15 +18,7 @@ export interface SendEmailParams {
   html: string;
 }
 
-export async function sendEmail(params: SendEmailParams): Promise<void> {
-  if (!env.RESEND_API_KEY) {
-    logger.info('Email send skipped (no RESEND_API_KEY set) — logging instead', {
-      to: params.to,
-      subject: params.subject,
-    });
-    return;
-  }
-
+async function sendViaResend(params: SendEmailParams): Promise<void> {
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -48,6 +38,60 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
     const body = await response.text();
     logger.error('Resend send failed', undefined, { status: response.status, body });
     throw new IntegrationError('Failed to send email at this time. Please try again shortly.');
+  }
+}
+
+async function sendViaGmailSMTP(params: SendEmailParams): Promise<void> {
+  // Dynamic import to avoid requiring nodemailer when not using Gmail
+  const nodemailer = await import('nodemailer');
+  
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: env.GMAIL_EMAIL,
+      pass: env.GMAIL_APP_PASSWORD,
+    },
+  });
+
+  try {
+    await transporter.sendMail({
+      from: env.GMAIL_EMAIL,
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+    });
+  } catch (error) {
+    logger.error('Gmail SMTP send failed', undefined, { error });
+    throw new IntegrationError('Failed to send email at this time. Please try again shortly.');
+  }
+}
+
+export async function sendEmail(params: SendEmailParams): Promise<void> {
+  const provider = env.EMAIL_PROVIDER || 'resend';
+  
+  // Log instead of sending in development if credentials not set
+  if (provider === 'resend' && !env.RESEND_API_KEY) {
+    logger.info('Email send skipped (no RESEND_API_KEY set) — logging instead', {
+      to: params.to,
+      subject: params.subject,
+    });
+    return;
+  }
+  
+  if (provider === 'gmail' && (!env.GMAIL_EMAIL || !env.GMAIL_APP_PASSWORD)) {
+    logger.info('Email send skipped (GMAIL_EMAIL or GMAIL_APP_PASSWORD not set) — logging instead', {
+      to: params.to,
+      subject: params.subject,
+    });
+    return;
+  }
+
+  if (provider === 'gmail') {
+    await sendViaGmailSMTP(params);
+  } else {
+    await sendViaResend(params);
   }
 }
 
