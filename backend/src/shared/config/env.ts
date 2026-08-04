@@ -45,8 +45,11 @@ const envSchema = z.object({
   R2_BUCKET_NAME: z.string().default('dreams-by-kalakaaar-media'),
   R2_PUBLIC_URL: z.string().url().optional(),
 
+  EMAIL_PROVIDER: z.enum(['resend', 'gmail']).default('resend'),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().default('Dreams by Kalakaaar <no-reply@dreamsbykalakaaar.com>'),
+  GMAIL_EMAIL: z.string().email().optional(),
+  GMAIL_APP_PASSWORD: z.string().optional(),
 
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
