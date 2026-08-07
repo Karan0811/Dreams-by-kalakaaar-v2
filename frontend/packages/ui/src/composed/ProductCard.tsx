@@ -16,7 +16,6 @@ import { WishlistButton } from "./WishlistButton";
  */
 export function ProductCard({ product }: { product: ProductSummary }) {
   const isSoldOut = product.availability === "sold_out";
-  console.log(product);
   const image = product.images[0];
 
   return (

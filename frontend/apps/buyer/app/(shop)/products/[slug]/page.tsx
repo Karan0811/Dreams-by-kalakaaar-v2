@@ -16,20 +16,18 @@ interface ProductPageProps {
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const result = await fetchProductBySlug(slug).catch(() => null);
-  if (!result) return {};
+  const product = await fetchProductBySlug(slug).catch(() => null);
+  if (!product) return {};
   return {
-    title: result.data.title,
-    description: result.data.shortDescription,
+    title: product.title,
+    description: product.shortDescription,
   };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const result = await fetchProductBySlug(slug).catch(() => null);
-  if (!result) notFound();
-
-  const product = result.data;
+  const product = await fetchProductBySlug(slug).catch(() => null);
+  if (!product) notFound();
 
   return (
     <div className="mx-auto max-w-(--container-content-xl) px-[var(--space-200)] py-[var(--space-400)] pb-24 lg:px-[var(--space-600)] lg:pb-[var(--space-400)]">

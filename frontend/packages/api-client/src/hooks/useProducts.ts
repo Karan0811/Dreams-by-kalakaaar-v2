@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import type { ProductDetailResponse, ProductListParams, ProductListResponse } from "@dbk/types";
+import type { Product, ProductListParams, ProductListResponse } from "@dbk/types";
 import { browserFetch } from "../browserFetch";
 import { productKeys } from "../query-keys";
 
@@ -68,7 +68,7 @@ export function useProducts(params: ProductListParams, initialPage?: ProductList
 export function useProduct(slug: string) {
   return useQuery({
     queryKey: productKeys.detail(slug),
-    queryFn: () => browserFetch<ProductDetailResponse>(`/api/products/${slug}`),
+    queryFn: () => browserFetch<Product>(`/api/products/${slug}`),
     staleTime: 5 * 60_000,
     enabled: Boolean(slug),
   });

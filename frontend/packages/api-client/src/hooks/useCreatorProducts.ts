@@ -44,9 +44,9 @@ export function useCreatorProduct(storeId: string, productId: string) {
   return useQuery({
     queryKey: creatorProductKeys.detail(productId),
     queryFn: () =>
-      browserFetch<{ data: CreatorProduct }>(
+      browserFetch<CreatorProduct>(
         `/api/products/${productId}?storeId=${encodeURIComponent(storeId)}`,
-      ).then((r) => r.data),
+      ),
     enabled: Boolean(storeId && productId),
   });
 }
@@ -55,10 +55,10 @@ export function useCreateProduct(storeId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateProductPayload) =>
-      browserFetch<{ data: CreatorProduct }>("/api/products", {
+      browserFetch<CreatorProduct>("/api/products", {
         method: "POST",
         body: { storeId, ...payload },
-      }).then((r) => r.data),
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: creatorProductKeys.lists() });
     },
@@ -69,10 +69,10 @@ export function useUpdateProduct(storeId: string, productId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: UpdateProductPayload) =>
-      browserFetch<{ data: CreatorProduct }>(`/api/products/${productId}`, {
+      browserFetch<CreatorProduct>(`/api/products/${productId}`, {
         method: "PATCH",
         body: { storeId, ...payload },
-      }).then((r) => r.data),
+      }),
     onSuccess: (data) => {
       queryClient.setQueryData(creatorProductKeys.detail(productId), data);
       void queryClient.invalidateQueries({ queryKey: creatorProductKeys.lists() });
@@ -84,10 +84,10 @@ export function useTransitionProductStatus(storeId: string, productId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (status: "ACTIVE" | "PAUSED" | "ARCHIVED") =>
-      browserFetch<{ data: CreatorProduct }>(`/api/products/${productId}`, {
+      browserFetch<CreatorProduct>(`/api/products/${productId}`, {
         method: "PATCH",
         body: { storeId, status },
-      }).then((r) => r.data),
+      }),
     onSuccess: (data) => {
       queryClient.setQueryData(creatorProductKeys.detail(productId), data);
       void queryClient.invalidateQueries({ queryKey: creatorProductKeys.lists() });
@@ -129,10 +129,10 @@ export function useUploadProductImage(storeId: string, productId: string) {
         sizeBytes: file.size,
       };
 
-      const { uploadUrl, mediaId } = await browserFetch<{ data: MediaUploadUrlResponse }>(
+      const { uploadUrl, mediaId } = await browserFetch<MediaUploadUrlResponse>(
         `/api/products/${productId}/media/upload-url`,
         { method: "POST", body: { storeId, ...uploadRequest } },
-      ).then((r) => r.data);
+      );
 
       const putResponse = await fetch(uploadUrl, {
         method: "PUT",
@@ -223,9 +223,9 @@ export function useDuplicateProduct(storeId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (product: CreatorProduct) => {
-      const detail = await browserFetch<{ data: CreatorProduct }>(
+      const detail = await browserFetch<CreatorProduct>(
         `/api/products/${product.id}?storeId=${encodeURIComponent(storeId)}`,
-      ).then((r) => r.data);
+      );
 
       const payload: CreateProductPayload = {
         title: `${detail.title} (Copy)`,
@@ -242,10 +242,10 @@ export function useDuplicateProduct(storeId: string) {
         })),
       };
 
-      return browserFetch<{ data: CreatorProduct }>("/api/products", {
+      return browserFetch<CreatorProduct>("/api/products", {
         method: "POST",
         body: { storeId, ...payload },
-      }).then((r) => r.data);
+      });
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: creatorProductKeys.lists() });

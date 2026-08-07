@@ -1,13 +1,14 @@
 import type { PaginatedResponse } from "../shared";
-import type { Product, ProductSummary, SessionUser } from "../domain";
+import type { ProductSummary, SessionUser } from "../domain";
 
-/** GET /api/products (09-api-architecture.md list endpoint shape). */
+/** GET /api/products — a collection response, so it IS wrapped in
+ * {data, pagination} per the backend's convention (see products.server.ts). */
 export type ProductListResponse = PaginatedResponse<ProductSummary>;
 
-/** GET /api/products/:slug */
-export interface ProductDetailResponse {
-  data: Product;
-}
+/** GET /api/products/:slug returns a `Product` directly — a single-resource
+ * response is never wrapped (see products.server.ts's doc comment for the
+ * full backend convention this follows). There is deliberately no
+ * `ProductDetailResponse` wrapper type; use `Product` itself. */
 
 /** Query params accepted by the product list Route Handler, constructed via
  * @dbk/api-client's buildFilterParams() (11-frontend-architecture.md §10.5).

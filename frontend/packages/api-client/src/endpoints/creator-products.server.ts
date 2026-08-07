@@ -18,6 +18,19 @@ import { apiFetch } from "../client";
  * internally, so the auth-bridge gap (`@dbk/auth`'s `getBackendAccessToken`
  * doc comment) is visible at every call site instead of hidden behind a
  * function that silently does nothing useful without it.
+ *
+ * Response shapes follow the backend's universal convention
+ * (backend/src/shared/http/response.ts's jsonResource/jsonCollection,
+ * 09-api-architecture.md §2.15-2.16): a collection response wraps its array
+ * under `data` with a `pagination` sibling; a single-resource response
+ * returns the resource at the root, unwrapped. Only `fetchCreatorProducts`
+ * hits a collection endpoint below — every other function here hits a
+ * single-resource endpoint and must NOT be typed with a `{ data: T }`
+ * wrapper (these previously were, which meant every creator product
+ * create/update/publish/upload call would have received `undefined`
+ * instead of the resource the moment the auth bridge is fixed and these
+ * are actually exercised — the same class of bug found and fixed in
+ * fetchProductBySlug on the buyer side).
  */
 function authHeaders(accessToken: string): HeadersInit {
   return { Authorization: `Bearer ${accessToken}` };
@@ -58,8 +71,8 @@ export async function fetchCreatorProduct(
   accessToken: string,
   storeId: string,
   productId: string,
-): Promise<{ data: CreatorProduct }> {
-  return apiFetch<{ data: CreatorProduct }>(`/stores/${storeId}/products/${productId}`, {
+): Promise<CreatorProduct> {
+  return apiFetch<CreatorProduct>(`/stores/${storeId}/products/${productId}`, {
     method: "GET",
     headers: authHeaders(accessToken),
     cache: "no-store",
@@ -70,8 +83,8 @@ export async function createCreatorProduct(
   accessToken: string,
   storeId: string,
   payload: CreateProductPayload,
-): Promise<{ data: CreatorProduct }> {
-  return apiFetch<{ data: CreatorProduct }>(`/stores/${storeId}/products`, {
+): Promise<CreatorProduct> {
+  return apiFetch<CreatorProduct>(`/stores/${storeId}/products`, {
     method: "POST",
     headers: authHeaders(accessToken),
     body: payload,
@@ -83,8 +96,8 @@ export async function updateCreatorProduct(
   storeId: string,
   productId: string,
   payload: UpdateProductPayload,
-): Promise<{ data: CreatorProduct }> {
-  return apiFetch<{ data: CreatorProduct }>(`/stores/${storeId}/products/${productId}`, {
+): Promise<CreatorProduct> {
+  return apiFetch<CreatorProduct>(`/stores/${storeId}/products/${productId}`, {
     method: "PATCH",
     headers: authHeaders(accessToken),
     body: payload,
@@ -96,8 +109,8 @@ export async function transitionCreatorProductStatus(
   storeId: string,
   productId: string,
   status: "ACTIVE" | "PAUSED" | "ARCHIVED",
-): Promise<{ data: CreatorProduct }> {
-  return apiFetch<{ data: CreatorProduct }>(`/stores/${storeId}/products/${productId}`, {
+): Promise<CreatorProduct> {
+  return apiFetch<CreatorProduct>(`/stores/${storeId}/products/${productId}`, {
     method: "PATCH",
     headers: authHeaders(accessToken),
     body: { status },
@@ -120,8 +133,8 @@ export async function requestCreatorProductMediaUpload(
   storeId: string,
   productId: string,
   payload: RequestMediaUploadPayload,
-): Promise<{ data: MediaUploadUrlResponse }> {
-  return apiFetch<{ data: MediaUploadUrlResponse }>(
+): Promise<MediaUploadUrlResponse> {
+  return apiFetch<MediaUploadUrlResponse>(
     `/stores/${storeId}/products/${productId}/media/upload-url`,
     { method: "POST", headers: authHeaders(accessToken), body: payload },
   );

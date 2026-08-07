@@ -8,6 +8,7 @@ export {
   useSession,
   requestPasswordReset,
   resetPassword,
+  sendVerificationEmail,
 } from "./auth-client";
 
 export {
