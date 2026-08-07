@@ -29,7 +29,9 @@ Sprint 1's scope covers Buyer and Creator only.
 npm install
 cp apps/buyer/.env.example apps/buyer/.env.local
 cp apps/creator/.env.example apps/creator/.env.local
-# fill in BETTER_AUTH_SECRET, DATABASE_URL, API_BASE_URL, etc.
+# Use the same BETTER_AUTH_SECRET and DATABASE_URL in both files. The buyer
+# app runs on :3002 and the creator app runs on :3001; keep both origins in
+# BETTER_AUTH_TRUSTED_ORIGINS.
 
 npm run dev            # both apps, via Turborepo
 npm run dev:buyer      # buyer only, http://localhost:3002
@@ -39,6 +41,46 @@ npm run build           # production build, both apps
 npm run type-check
 npm run lint
 ```
+
+### Auth database setup (required before sign-up/sign-in will work)
+
+Better Auth (`packages/auth/src/better-auth.config.ts`) needs its tables
+(`user`, `session`, `account`, `verification`) in the shared `DATABASE_URL`.
+Both frontend apps use this one configuration and one schema. Without them,
+sign-up fails with
+`relation "user" does not exist`.
+
+**Fastest path** — apply the already-generated migration:
+```bash
+psql "$DATABASE_URL" -f packages/auth/migrations/0001_better_auth_schema.sql
+```
+
+**To regenerate it** (e.g. after changing a Better Auth plugin/config): the
+CLI can't resolve the config file with its `import "server-only"` lines
+present, so temporarily strip them, generate, then restore:
+```bash
+cd packages/auth/src
+cp better-auth.config.ts better-auth.config.cli-temp.ts
+cp email.ts email.cli-temp.ts
+sed -i '' '/^import "server-only";$/d' better-auth.config.cli-temp.ts email.cli-temp.ts   # macOS sed; drop the '' arg on Linux
+sed -i '' 's/from ".\/email"/from ".\/email.cli-temp"/' better-auth.config.cli-temp.ts
+cd ../../.. && npx @better-auth/cli generate \
+  --config packages/auth/src/better-auth.config.cli-temp.ts \
+  --output packages/auth/migrations/0001_better_auth_schema.sql -y
+rm packages/auth/src/better-auth.config.cli-temp.ts packages/auth/src/email.cli-temp.ts
+```
+After applying the migration, verify a real `sign-up`/`sign-in` round-trip
+against the target database before release.
+
+**Seeded demo accounts do not work through this login form.** The backend's
+`db:seed:demo` (see `backend/README.md`) inserts rows directly into the
+backend's own `users` table, not into Better Auth's `user` table above —
+these are two separate systems (the documented "auth bridge gap", see
+`packages/auth/src/access-token.ts`). Seeded accounts are only usable via
+the backend's own `POST /v1/auth/login` REST endpoint (e.g. through
+Swagger at `/api/docs`) until that bridge is built. Sign up for a real
+account through this app's own `/signup` form to test the buyer/creator UI
+end-to-end today.
 
 ## Sprint 0.5 — Shared Packages Foundation
 
@@ -130,4 +172,3 @@ backend from the creator app.
   unauthenticated visitors rather than persisting a session-scoped guest
   cart — flagged inline in `apps/buyer/app/api/cart/route.ts` as the seam
   for that follow-up work.
-

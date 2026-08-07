@@ -58,6 +58,15 @@ export function CreatorLoginForm() {
         Sign In
       </Button>
 
+      <div className="flex justify-end">
+        <a
+          href={`${process.env.NEXT_PUBLIC_BUYER_APP_URL ?? "http://localhost:3002"}/forgot-password`}
+          className="text-[13px] font-medium text-text-link hover:underline"
+        >
+          Forgot password?
+        </a>
+      </div>
+
       <p className="text-center text-[13px] text-text-secondary">
         Not a creator yet?{" "}
         <Link href="/become-a-creator" className="font-medium text-text-link hover:underline">

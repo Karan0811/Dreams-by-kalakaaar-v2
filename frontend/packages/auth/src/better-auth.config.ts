@@ -27,9 +27,20 @@ import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
  * against DATABASE_URL once, per the README, before relying on auth in a
  * real environment.
  */
-const databasePool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+const globalForAuth = globalThis as typeof globalThis & {
+  __dbkBetterAuthPool?: Pool;
+};
+
+/** Keep one pool per running Next.js process, including during development HMR. */
+const databasePool =
+  globalForAuth.__dbkBetterAuthPool ??
+  new Pool({
+    connectionString: process.env.DATABASE_URL,
+  });
+
+if (process.env.NODE_ENV !== "production") {
+  globalForAuth.__dbkBetterAuthPool = databasePool;
+}
 
 const hasGoogleOAuthConfigured = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
@@ -50,17 +61,50 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Disabled for now since we don't have email flow set up
+    requireEmailVerification: true,
     minPasswordLength: 10,
+    // FIX: `requireEmailVerification: true` with no `sendResetPassword`
+    // callback means Better Auth has no way to actually deliver a reset
+    // link — the Forgot Password screen (07-ui-screens-wireframes.md §4.4)
+    // would silently do nothing. Wired to send via SMTP or Resend — see
+    // ./email.ts for which one actually fires and why.
     sendResetPassword: async ({ user, url }) => {
       await sendPasswordResetEmail({ to: user.email, resetUrl: url });
     },
   },
   emailVerification: {
+    // FIX: required once `requireEmailVerification` is true — otherwise a
+    // newly signed-up user has no way to ever complete verification and is
+    // permanently stuck.
     sendVerificationEmail: async ({ user, url }) => {
       await sendVerificationEmail({ to: user.email, verificationUrl: url });
     },
-    sendOnSignUp: false, // Disabled for now
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+  },
+  // FIX (production audit): `roles` and `hasCreatorProfile` were read off
+  // the Better Auth user object in session.ts via an unchecked `as unknown`
+  // cast, but nothing ever told Better Auth these columns existed — they
+  // were never actually persisted. Declaring them here makes them real,
+  // migrated columns (via `npx @better-auth/cli generate`) with real
+  // defaults, which is what session.ts now reads.
+  user: {
+    additionalFields: {
+      roles: {
+        type: "string",
+        required: false,
+        defaultValue: JSON.stringify(["buyer"]),
+        // Not settable by the client at signup — only backend processes
+        // (e.g., creator approval) should ever change this.
+        input: false,
+      },
+      hasCreatorProfile: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
+    },
   },
   // Third-party sign-in (Google) is enabled per 07-ui-screens-wireframes.md
   // §4.1/4.2 "third-party sign-in options", but only registered when both

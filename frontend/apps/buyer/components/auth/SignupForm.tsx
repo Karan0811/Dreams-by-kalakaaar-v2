@@ -37,7 +37,7 @@ export function SignupForm() {
       return;
     }
 
-    router.push("/verify-email");
+    router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
   }
 
   return (

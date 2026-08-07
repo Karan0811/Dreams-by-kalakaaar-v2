@@ -17,7 +17,10 @@ export function ForgotPasswordForm() {
   } = useForm<ForgotPasswordInput>({ resolver: zodResolver(forgotPasswordSchema) });
 
   async function onSubmit(values: ForgotPasswordInput) {
-    await requestPasswordReset({ email: values.email, redirectTo: "/reset-password" });
+    await requestPasswordReset({
+      email: values.email,
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
     // §4.4 AUTH-04: identical confirmation whether or not the account exists.
     setSubmitted(true);
   }
