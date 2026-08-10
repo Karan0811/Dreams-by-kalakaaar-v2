@@ -11,17 +11,21 @@ import {
   ProductNotFoundError,
   ProductNotPublishReadyError,
   ProductVariantNotFoundError,
+  ProductVariantSkuAlreadyExistsError,
+  CannotDeleteOnlyVariantError,
   StoreNotFoundError,
 } from './errors';
 import type {
   AdjustInventoryInput,
   AttachProductMediaInput,
   CreateProductInput,
+  CreateProductVariantInput,
   ListProductsQuery,
   ListStoreProductsQuery,
   RequestProductMediaUploadInput,
   UpdateProductInput,
   UpdateProductMediaInput,
+  UpdateProductVariantInput,
 } from './schemas';
 
 /** Products module Service Layer — 08-database-design.md Section 8. */
@@ -248,4 +252,75 @@ export async function adjustVariantInventory(
   });
 
   return updated;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Sprint 02 — Inventory read                                               */
+/* ------------------------------------------------------------------------ */
+
+export async function getVariantInventory(productId: string, variantId: string) {
+  const variant = await productsRepository.findVariantById(variantId);
+  if (!variant || variant.productId !== productId) throw new ProductVariantNotFoundError();
+
+  const inventoryRow = await productsRepository.findInventoryByVariantId(variantId);
+  return {
+    variantId,
+    quantityAvailable: inventoryRow?.quantityAvailable ?? 0,
+    quantityReserved: inventoryRow?.quantityReserved ?? 0,
+    lowStockThreshold: inventoryRow?.lowStockThreshold ?? null,
+    updatedAt: inventoryRow?.updatedAt ?? null,
+  };
+}
+
+/* ------------------------------------------------------------------------ */
+/* Sprint 02 — standalone Product Variant CRUD                              */
+/* ------------------------------------------------------------------------ */
+
+export async function listVariants(productId: string) {
+  await getProductOrThrow(productId);
+  return productsRepository.findVariantsForProduct(productId);
+}
+
+export async function createVariant(productId: string, input: CreateProductVariantInput) {
+  await getProductOrThrow(productId);
+
+  if (input.skuReference) {
+    const existing = await productsRepository.findVariantBySku(input.skuReference);
+    if (existing) throw new ProductVariantSkuAlreadyExistsError();
+  }
+
+  const variant = await productsRepository.createProductVariant(productId, input);
+  logger.info('Product variant created', { productId, variantId: variant.id });
+  return variant;
+}
+
+export async function updateVariant(
+  productId: string,
+  variantId: string,
+  input: UpdateProductVariantInput,
+) {
+  const variant = await productsRepository.findVariantById(variantId);
+  if (!variant || variant.productId !== productId) throw new ProductVariantNotFoundError();
+
+  if (input.skuReference && input.skuReference !== variant.skuReference) {
+    const existing = await productsRepository.findVariantBySku(input.skuReference);
+    if (existing && existing.id !== variantId) throw new ProductVariantSkuAlreadyExistsError();
+  }
+
+  const updated = await productsRepository.updateProductVariant(variantId, input);
+  if (!updated) throw new ProductVariantNotFoundError();
+  return updated;
+}
+
+/** Archives (see `repository.ts`'s `archiveProductVariant` doc comment for why not a hard delete). Refuses to archive a Product's last remaining ACTIVE variant — a Product must always be purchasable if it's ACTIVE. */
+export async function archiveVariant(productId: string, variantId: string) {
+  const variant = await productsRepository.findVariantById(variantId);
+  if (!variant || variant.productId !== productId) throw new ProductVariantNotFoundError();
+
+  const activeCount = await productsRepository.countActiveVariantsForProduct(productId);
+  if (variant.status === 'ACTIVE' && activeCount <= 1) throw new CannotDeleteOnlyVariantError();
+
+  const archived = await productsRepository.archiveProductVariant(variantId);
+  if (!archived) throw new ProductVariantNotFoundError();
+  return archived;
 }

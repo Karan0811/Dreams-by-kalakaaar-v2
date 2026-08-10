@@ -112,3 +112,130 @@ export interface AdjustInventoryPayload {
   lowStockThreshold?: number;
   reason?: string;
 }
+
+/**
+ * Sprint 02 — Marketplace Foundation payloads. Field-for-field matches of
+ * each module's Zod schema (`modules/{name}/schemas.ts`), same convention as
+ * the Sprint 01 Product payloads above.
+ */
+
+export interface CreateCreatorAddressPayload {
+  type?: import("../domain").CreatorAddressType;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country?: string;
+  isDefault?: boolean;
+}
+export type UpdateCreatorAddressPayload = Partial<CreateCreatorAddressPayload>;
+
+export interface CreateCreatorBankDetailPayload {
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  branchName?: string;
+  isPrimary?: boolean;
+}
+export type UpdateCreatorBankDetailPayload = Partial<CreateCreatorBankDetailPayload>;
+
+export interface CreateCreatorSocialLinkPayload {
+  platform: import("../domain").CreatorSocialPlatform;
+  url: string;
+  displayOrder?: number;
+}
+export interface UpdateCreatorSocialLinkPayload {
+  url?: string;
+  displayOrder?: number;
+}
+
+export interface RequestCreatorDocumentUploadPayload {
+  fileName: string;
+  contentType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
+  sizeBytes: number;
+}
+export interface CreateCreatorDocumentPayload {
+  mediaId: string;
+  type: import("../domain").CreatorDocumentType;
+}
+export interface ReviewCreatorDocumentPayload {
+  status: "APPROVED" | "REJECTED";
+  reviewNotes?: string;
+}
+export interface UpdateCreatorProfilePayload {
+  legalName?: string;
+  businessName?: string | null;
+  taxIdentifier?: string;
+  category?: string;
+}
+export interface CreatorStatusTransitionPayload {
+  onboardingStatus: import("../domain").CreatorOnboardingStatus;
+  reason?: string;
+}
+
+export interface CreateCategoryPayload {
+  name: string;
+  slug?: string;
+  description?: string;
+  parentId?: string;
+  displayOrder?: number;
+}
+export type UpdateCategoryPayload = Partial<Omit<CreateCategoryPayload, "parentId">>;
+
+export interface CreateProductVariantPayload {
+  attributes?: Record<string, string>;
+  priceAmount: number;
+  priceCurrency?: string;
+  skuReference?: string;
+  initialQuantity?: number;
+}
+export interface UpdateProductVariantPayload {
+  attributes?: Record<string, string>;
+  priceAmount?: number;
+  priceCurrency?: string;
+  skuReference?: string | null;
+  status?: "ACTIVE" | "ARCHIVED";
+}
+
+export interface CreateUserAddressPayload {
+  label?: string;
+  type?: import("../domain").UserAddressType;
+  recipientName: string;
+  recipientPhone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country?: string;
+  isDefault?: boolean;
+}
+export type UpdateUserAddressPayload = Partial<CreateUserAddressPayload>;
+
+export interface AddCartItemPayload {
+  variantId: string;
+  quantity?: number;
+}
+export interface UpdateCartItemPayload {
+  quantity: number;
+}
+
+export interface CreateOrderPayload {
+  shippingAddressId: string;
+}
+export interface CancelOrderPayload {
+  reason?: string;
+}
+export interface UpdateOrderStatusPayload {
+  status: "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  note?: string;
+}
+
+export interface CreateReviewPayload {
+  rating: number;
+  title?: string;
+  body: string;
+}
+export type UpdateReviewPayload = Partial<CreateReviewPayload>;

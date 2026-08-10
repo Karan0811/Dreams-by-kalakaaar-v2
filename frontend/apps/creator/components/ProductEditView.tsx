@@ -8,6 +8,7 @@ import { ProductEditForm } from "./ProductEditForm";
 import { ProductStatusPanel } from "./ProductStatusPanel";
 import { ProductImageGallery } from "./ProductImageGallery";
 import { ProductInventoryPanel } from "./ProductInventoryPanel";
+import { ProductVariantManager } from "./ProductVariantManager";
 import { ProductPreviewCard } from "./ProductPreviewCard";
 
 export function ProductEditView({ storeId, productId }: { storeId: string; productId: string }) {
@@ -45,6 +46,7 @@ export function ProductEditView({ storeId, productId }: { storeId: string; produ
           </Alert>
         ) : null}
         <ProductEditForm storeId={storeId} product={product} onLiveChange={setLiveFields} />
+        <ProductVariantManager storeId={storeId} productId={productId} />
         <ProductInventoryPanel storeId={storeId} productId={productId} variants={product.variants ?? []} />
       </div>
       <div className="flex flex-col gap-[var(--space-300)]">

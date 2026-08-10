@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   adjustInventorySchema,
   attachProductMediaSchema,
+  createProductVariantSchema,
   listProductsQuerySchema,
   listStoreProductsQuerySchema,
   productSortSchema,
   requestProductMediaUploadSchema,
   sortUsesCursorPagination,
+  updateProductVariantSchema,
 } from '../schemas';
 
 describe('productSortSchema / sortUsesCursorPagination', () => {
@@ -115,5 +117,43 @@ describe('attachProductMediaSchema', () => {
       altText: 'a',
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('createProductVariantSchema (Sprint 02)', () => {
+  it('accepts a minimal variant and applies defaults', () => {
+    const result = createProductVariantSchema.parse({ priceAmount: 1500 });
+    expect(result.priceCurrency).toBe('INR');
+    expect(result.initialQuantity).toBe(0);
+    expect(result.attributes).toEqual({});
+  });
+
+  it('rejects a negative price', () => {
+    expect(createProductVariantSchema.safeParse({ priceAmount: -100 }).success).toBe(false);
+  });
+
+  it('accepts a full variant with attributes and SKU', () => {
+    const result = createProductVariantSchema.parse({
+      attributes: { size: '8', color: 'gold' },
+      priceAmount: 2000,
+      skuReference: 'RING-8-GOLD',
+      initialQuantity: 12,
+    });
+    expect(result.skuReference).toBe('RING-8-GOLD');
+    expect(result.initialQuantity).toBe(12);
+  });
+});
+
+describe('updateProductVariantSchema (Sprint 02)', () => {
+  it('accepts a partial price-only update', () => {
+    expect(updateProductVariantSchema.parse({ priceAmount: 1800 }).priceAmount).toBe(1800);
+  });
+
+  it('accepts an ARCHIVED status transition', () => {
+    expect(updateProductVariantSchema.parse({ status: 'ARCHIVED' }).status).toBe('ARCHIVED');
+  });
+
+  it('rejects an invalid status value', () => {
+    expect(updateProductVariantSchema.safeParse({ status: 'DELETED' }).success).toBe(false);
   });
 });

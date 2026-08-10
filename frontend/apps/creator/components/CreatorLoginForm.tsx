@@ -29,6 +29,19 @@ export function CreatorLoginForm() {
       return;
     }
 
+    // Bridges this Better Auth session to the backend's own JWT auth (see
+    // `@dbk/auth`'s `access-token.ts` doc comment) — every authenticated
+    // BFF route in this app (Creator profile, Products, Variants, ...)
+    // depends on this having run.
+    const bridgeResponse = await fetch("/api/session/bridge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: values.email, password: values.password }),
+    });
+    if (!bridgeResponse.ok) {
+      setFormError("Signed in, but some features may be unavailable until you refresh the page.");
+    }
+
     router.push(searchParams.get("redirectTo") ?? "/dashboard");
     router.refresh();
   }

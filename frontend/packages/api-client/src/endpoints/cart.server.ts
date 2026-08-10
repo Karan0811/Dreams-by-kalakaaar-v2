@@ -1,26 +1,50 @@
 import "server-only";
-import type { Cart } from "@dbk/types";
-import type { AddCartItemInput } from "@dbk/utils";
+import type { AddCartItemPayload, CartEntry, CartState, UpdateCartItemPayload } from "@dbk/types";
 import { apiFetch } from "../client";
 
-/** Server-only cart endpoint functions, called from Route Handlers after
- * the caller's session has already been validated there. */
-export async function fetchCart(sessionUserId: string): Promise<{ data: Cart }> {
-  return apiFetch<{ data: Cart }>("/cart", {
+/**
+ * Cart endpoints (`/users/me/cart`). Replaces the Sprint 01 placeholder
+ * (this file previously called a `/cart` + `X-User-Id` contract that
+ * doesn't exist on the real backend — `modules/cart` was built in Sprint 02
+ * and expects `Authorization: Bearer <token>`, matching every other
+ * authenticated endpoint). See `authHeaders` below.
+ */
+function authHeaders(accessToken: string): HeadersInit {
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
+export async function fetchCart(accessToken: string): Promise<CartState> {
+  return apiFetch<CartState>("/users/me/cart", {
     method: "GET",
-    headers: { "X-User-Id": sessionUserId },
+    headers: authHeaders(accessToken),
     cache: "no-store",
   });
 }
 
-export async function addCartItem(
-  sessionUserId: string,
-  input: AddCartItemInput,
-): Promise<{ data: Cart }> {
-  return apiFetch<{ data: Cart }>("/cart/items", {
+export async function addCartItem(accessToken: string, input: AddCartItemPayload): Promise<CartEntry> {
+  return apiFetch<CartEntry>("/users/me/cart", {
     method: "POST",
-    headers: { "X-User-Id": sessionUserId },
+    headers: authHeaders(accessToken),
     body: input,
     idempotencyKey: crypto.randomUUID(),
+  });
+}
+
+export async function updateCartItem(
+  accessToken: string,
+  cartItemId: string,
+  input: UpdateCartItemPayload,
+): Promise<CartEntry> {
+  return apiFetch<CartEntry>(`/users/me/cart/${cartItemId}`, {
+    method: "PATCH",
+    headers: authHeaders(accessToken),
+    body: input,
+  });
+}
+
+export async function removeCartItem(accessToken: string, cartItemId: string): Promise<void> {
+  await apiFetch<void>(`/users/me/cart/${cartItemId}`, {
+    method: "DELETE",
+    headers: authHeaders(accessToken),
   });
 }

@@ -1,17 +1,16 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { PackageSearch } from "lucide-react";
 import { getServerSession } from "@dbk/auth/server";
-import { Button, Card } from "@dbk/ui";
+import { DashboardOrdersPreview } from "@/components/account/DashboardOrdersPreview";
+import { Card } from "@dbk/ui";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Your Account" };
 
 /**
- * Sprint 1 delivers this as a dashboard *shell*: layout, navigation, and the
- * correctly-designed empty state. The Orders list/detail feature itself
- * (backed by a real orders endpoint) is out of scope for this sprint per the
- * brief, so this intentionally shows the "no orders yet" state from
- * §5.1 rather than fabricating order data.
+ * Sprint 02 — Orders is now a real feature (`modules/orders`), so this
+ * dashboard's summary card queries the actual endpoint instead of always
+ * rendering Sprint 01's static "no orders yet" placeholder. The full list
+ * lives at `/account/orders`; this is just a preview.
  */
 export default async function AccountDashboardPage() {
   const session = await getServerSession();
@@ -25,18 +24,7 @@ export default async function AccountDashboardPage() {
         <p className="mt-1 text-[14px] text-text-secondary">Here&apos;s a quick look at your account.</p>
       </div>
 
-      <Card className="flex flex-col items-center gap-3 py-[var(--space-800)] text-center">
-        <PackageSearch className="size-10 text-text-secondary" aria-hidden />
-        <div>
-          <p className="text-[16px] font-medium text-text-primary">No orders yet</p>
-          <p className="mt-1 text-[14px] text-text-secondary">
-            When you place an order, you&apos;ll be able to track it here.
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/products">Start Browsing</Link>
-        </Button>
-      </Card>
+      <DashboardOrdersPreview />
 
       <div className="grid gap-[var(--space-300)] sm:grid-cols-3">
         <Card>

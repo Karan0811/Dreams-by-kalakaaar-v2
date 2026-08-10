@@ -42,3 +42,16 @@ export class ProductVariantNotFoundError extends NotFoundError {
     super('Product variant not found.');
   }
 }
+
+/** Sprint 02 — standalone Product Variant CRUD. */
+export class ProductVariantSkuAlreadyExistsError extends ConflictError {
+  constructor() {
+    super('A Product Variant with this SKU already exists.');
+  }
+}
+
+export class CannotDeleteOnlyVariantError extends ValidationError {
+  constructor() {
+    super('Cannot remove a Product\'s only Variant — archive it or delete the Product instead.', undefined, 422);
+  }
+}

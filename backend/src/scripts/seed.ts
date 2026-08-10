@@ -44,6 +44,9 @@ const PERMISSIONS: Array<{ key: string; description: string; category: string }>
   { key: 'creators:review', description: 'Approve/reject Creator applications', category: 'creators' },
   { key: 'platform:health:read', description: 'Read the deep health-check endpoint', category: 'platform' },
   { key: 'users:manage', description: 'Administrative override on any User account', category: 'users' },
+  { key: 'categories:write', description: 'Create/update/delete Categories and Subcategories', category: 'categories' },
+  { key: 'orders:manage', description: "Administrative override on any User's Order lifecycle", category: 'orders' },
+  { key: 'reviews:moderate', description: "Remove any User's Review (moderation)", category: 'reviews' },
 ];
 
 const ROLES: Array<{
@@ -80,6 +83,9 @@ const ROLES: Array<{
       'creators:review',
       'platform:health:read',
       'users:manage',
+      'categories:write',
+      'orders:manage',
+      'reviews:moderate',
     ],
   },
   {

@@ -2,33 +2,57 @@
 
 import * as React from "react";
 import { Heart } from "lucide-react";
-import { useAddToCart } from "@dbk/api-client";
+import { useAddToCart, useAddToWishlist, useWishlist, useRemoveFromWishlist } from "@dbk/api-client";
 import { Button, FormField, Input, toast } from "@dbk/ui";
 import type { Product } from "@dbk/types";
 
 /**
  * Customization Panel + Add to Cart/Wishlist actions (§3.13). Add to Cart is
- * an optimistic mutation (§10.3) — the button reflects loading state, and a
- * failure is surfaced via toast with the cart cache rolled back automatically
- * inside `useAddToCart`.
+ * a mutation against the real Cart backend (`useAddToCart`, Sprint 02) —
+ * it's guarded on `product.variantId` being present, since this
+ * aspirational catalog page (see `@dbk/types`'s `Product` doc comment)
+ * doesn't always carry one yet; when it's missing, the button explains why
+ * instead of silently doing nothing or fabricating a fake purchase target.
  */
 export function ProductPurchasePanel({ product }: { product: Product }) {
   const [selections, setSelections] = React.useState<Record<string, string>>({});
   const addToCart = useAddToCart();
+  const addToWishlist = useAddToWishlist();
+  const removeFromWishlist = useRemoveFromWishlist();
+  const { data: wishlist } = useWishlist();
   const isSoldOut = product.availability === "sold_out";
+  const isWishlisted = wishlist?.some((entry) => entry.productId === product.id) ?? false;
 
   const missingRequired = product.customizationFields.some(
     (field) => field.required && !selections[field.id]?.trim(),
   );
 
   function handleAddToCart() {
+    if (!product.variantId) {
+      toast.error("This product isn't available for purchase yet.");
+      return;
+    }
     addToCart.mutate(
-      { productId: product.id, quantity: 1, customizationSelections: selections },
+      { variantId: product.variantId, quantity: 1 },
       {
         onSuccess: () => toast.success("Added to cart"),
         onError: () => toast.error("Couldn't add this to your cart. Please try again."),
       },
     );
+  }
+
+  function handleToggleWishlist() {
+    if (isWishlisted) {
+      removeFromWishlist.mutate(product.id, {
+        onSuccess: () => toast("Removed from your wishlist"),
+        onError: () => toast.error("Couldn't update your wishlist. Please try again."),
+      });
+    } else {
+      addToWishlist.mutate(product.id, {
+        onSuccess: () => toast.success("Saved to your wishlist"),
+        onError: () => toast.error("Couldn't update your wishlist. Please try again."),
+      });
+    }
   }
 
   return (
@@ -60,10 +84,11 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
         <Button
           variant="secondary"
           size="lg"
-          aria-label="Add to wishlist"
-          onClick={() => toast("Saved to your wishlist")}
+          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          isLoading={addToWishlist.isPending || removeFromWishlist.isPending}
+          onClick={handleToggleWishlist}
         >
-          <Heart aria-hidden />
+          <Heart aria-hidden fill={isWishlisted ? "currentColor" : "none"} />
         </Button>
       </div>
 

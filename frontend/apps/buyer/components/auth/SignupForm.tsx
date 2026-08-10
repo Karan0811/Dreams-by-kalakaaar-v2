@@ -37,6 +37,14 @@ export function SignupForm() {
       return;
     }
 
+    // Registers a matching backend account (see `bridgeBackendRegistration`'s
+    // doc comment for why sign-up needs registration, not login).
+    await fetch("/api/session/bridge-register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: values.email, password: values.password, displayName: values.displayName }),
+    });
+
     router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
   }
 

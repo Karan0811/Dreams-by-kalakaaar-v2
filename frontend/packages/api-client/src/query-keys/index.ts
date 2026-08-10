@@ -21,6 +21,66 @@ export const cartKeys = {
   current: () => [...cartKeys.all, "current"] as const,
 };
 
+export const wishlistKeys = {
+  all: ["wishlist"] as const,
+  list: () => [...wishlistKeys.all, "list"] as const,
+};
+
+export const addressKeys = {
+  all: ["addresses"] as const,
+  list: () => [...addressKeys.all, "list"] as const,
+};
+
+export const orderKeys = {
+  all: ["orders"] as const,
+  lists: () => [...orderKeys.all, "list"] as const,
+  list: (params?: Record<string, unknown>) => [...orderKeys.lists(), params ?? {}] as const,
+  details: () => [...orderKeys.all, "detail"] as const,
+  detail: (orderId: string) => [...orderKeys.details(), orderId] as const,
+};
+
+export const reviewKeys = {
+  all: ["reviews"] as const,
+  list: (productIdOrSlug: string) => [...reviewKeys.all, "list", productIdOrSlug] as const,
+};
+
+export const notificationKeys = {
+  all: ["notifications"] as const,
+  list: (params?: Record<string, unknown>) => [...notificationKeys.all, "list", params ?? {}] as const,
+};
+
+export const creatorAddressKeys = {
+  all: ["creator-addresses"] as const,
+  list: () => [...creatorAddressKeys.all, "list"] as const,
+};
+
+export const creatorBankDetailKeys = {
+  all: ["creator-bank-details"] as const,
+  list: () => [...creatorBankDetailKeys.all, "list"] as const,
+};
+
+export const creatorSocialLinkKeys = {
+  all: ["creator-social-links"] as const,
+  list: () => [...creatorSocialLinkKeys.all, "list"] as const,
+};
+
+export const creatorDocumentKeys = {
+  all: ["creator-documents"] as const,
+  list: () => [...creatorDocumentKeys.all, "list"] as const,
+};
+
+export const categoryKeys = {
+  all: ["categories"] as const,
+  list: (params?: Record<string, unknown>) => [...categoryKeys.all, "list", params ?? {}] as const,
+  detail: (categoryId: string) => [...categoryKeys.all, "detail", categoryId] as const,
+};
+
+export const productVariantKeys = {
+  all: ["product-variants"] as const,
+  list: (productId: string) => [...productVariantKeys.all, "list", productId] as const,
+  inventory: (variantId: string) => [...productVariantKeys.all, "inventory", variantId] as const,
+};
+
 export const sessionKeys = {
   all: ["session"] as const,
   current: () => [...sessionKeys.all, "current"] as const,

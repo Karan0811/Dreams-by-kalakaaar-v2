@@ -7,6 +7,7 @@ import { formatMoney } from "@dbk/utils";
 import { Avatar, AvailabilityStatusBadge, Badge } from "@dbk/ui";
 import { ProductGallery } from "@/components/ProductGallery";
 import { ProductPurchasePanel } from "@/components/ProductPurchasePanel";
+import { ProductReviews } from "@/components/ProductReviews";
 import { RelatedProducts } from "@/components/RelatedProducts";
 import { StickyAddToCartBar } from "@/components/StickyAddToCartBar";
 
@@ -100,6 +101,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
           ) : null}
         </div>
       </div>
+
+      <ProductReviews productSlug={slug} />
 
       <RelatedProducts categoryId={product.category.id} excludeProductId={product.id} />
 

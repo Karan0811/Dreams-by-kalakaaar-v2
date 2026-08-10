@@ -15,11 +15,13 @@ import type {
   AdjustInventoryInput,
   AttachProductMediaInput,
   CreateProductInput,
+  CreateProductVariantInput,
   ListProductsQuery,
   ListStoreProductsQuery,
   ProductSort,
   UpdateProductInput,
   UpdateProductMediaInput,
+  UpdateProductVariantInput,
 } from './schemas';
 import { sortUsesCursorPagination } from './schemas';
 
@@ -569,6 +571,8 @@ export async function countMediaForProduct(productId: string): Promise<number> {
 /* Sprint 01 — Product Images                                               */
 /* ------------------------------------------------------------------------ */
 
+import * as sharedMediaRepository from '@/shared/storage/media-repository';
+
 export async function createPendingMediaRow(params: {
   uploadedById: string;
   storageKey: string;
@@ -576,35 +580,15 @@ export async function createPendingMediaRow(params: {
   mimeType: string;
   sizeBytes: number;
 }) {
-  const [row] = await db
-    .insert(media)
-    .values({
-      uploadedById: params.uploadedById,
-      type: 'IMAGE',
-      status: 'PENDING_UPLOAD',
-      storageKey: params.storageKey,
-      publicUrl: params.publicUrl,
-      mimeType: params.mimeType,
-      sizeBytes: params.sizeBytes,
-    })
-    .returning();
-
-  if (!row) throw new Error('Failed to create Media row.');
-  return row;
+  return sharedMediaRepository.createPendingMediaRow({ ...params, type: 'IMAGE' });
 }
 
 export async function findMediaById(mediaId: string) {
-  const [row] = await db.select().from(media).where(eq(media.id, mediaId)).limit(1);
-  return row ?? null;
+  return sharedMediaRepository.findMediaById(mediaId);
 }
 
 export async function markMediaReady(mediaId: string, altText: string) {
-  const [row] = await db
-    .update(media)
-    .set({ status: 'READY', altText })
-    .where(eq(media.id, mediaId))
-    .returning();
-  return row ?? null;
+  return sharedMediaRepository.markMediaReady(mediaId, altText);
 }
 
 export async function attachMediaToProduct(productId: string, input: AttachProductMediaInput) {
@@ -705,6 +689,75 @@ export async function adjustVariantInventory(variantId: string, input: AdjustInv
       updatedAt: new Date(),
     })
     .where(eq(inventory.variantId, variantId))
+    .returning();
+  return row ?? null;
+}
+
+/** Sprint 02 — Inventory read (the CRUD's missing "R"; create/update already exist via variant creation and `adjustVariantInventory`). */
+export async function findInventoryByVariantId(variantId: string) {
+  const [row] = await db.select().from(inventory).where(eq(inventory.variantId, variantId)).limit(1);
+  return row ?? null;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Sprint 02 — standalone Product Variant CRUD                              */
+/* ------------------------------------------------------------------------ */
+
+export async function findVariantBySku(skuReference: string) {
+  const [row] = await db
+    .select()
+    .from(productVariants)
+    .where(eq(productVariants.skuReference, skuReference))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function countActiveVariantsForProduct(productId: string): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(productVariants)
+    .where(and(eq(productVariants.productId, productId), eq(productVariants.status, 'ACTIVE')));
+  return row?.count ?? 0;
+}
+
+export async function createProductVariant(productId: string, input: CreateProductVariantInput) {
+  return withTransaction(async (tx) => {
+    const [variant] = await tx
+      .insert(productVariants)
+      .values({
+        productId,
+        attributes: input.attributes,
+        priceAmount: input.priceAmount,
+        priceCurrency: input.priceCurrency,
+        skuReference: input.skuReference,
+      })
+      .returning();
+    if (!variant) throw new Error('Failed to create ProductVariant row.');
+
+    await tx.insert(inventory).values({
+      variantId: variant.id,
+      quantityAvailable: input.initialQuantity,
+    });
+
+    return variant;
+  });
+}
+
+export async function updateProductVariant(variantId: string, input: UpdateProductVariantInput) {
+  const [row] = await db
+    .update(productVariants)
+    .set({ ...input, updatedAt: new Date() })
+    .where(eq(productVariants.id, variantId))
+    .returning();
+  return row ?? null;
+}
+
+/** Archives rather than hard-deletes — `orderItems.variantId` is `onDelete: 'restrict'` (historical orders must keep referencing the exact variant that was purchased), the same reasoning Products' own soft-delete already follows. */
+export async function archiveProductVariant(variantId: string) {
+  const [row] = await db
+    .update(productVariants)
+    .set({ status: 'ARCHIVED', updatedAt: new Date() })
+    .where(eq(productVariants.id, variantId))
     .returning();
   return row ?? null;
 }

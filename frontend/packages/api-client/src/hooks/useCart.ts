@@ -1,42 +1,54 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Cart } from "@dbk/types";
-import type { AddCartItemInput } from "@dbk/utils";
+import type { AddCartItemPayload, CartEntry, CartState, UpdateCartItemPayload } from "@dbk/types";
 import { browserFetch } from "../browserFetch";
 import { cartKeys } from "../query-keys";
 
-/** Cart contents are always server state (§9.1) — never duplicated into a
- * Zustand store. `staleTime: 0` per §9.10: cart must never show stale state. */
+/**
+ * Cart contents are always server state — never duplicated into a Zustand
+ * store. `staleTime: 0`: cart must never show stale state. Real backend
+ * shape (`CartState`) — see `cart.server.ts`'s doc comment for why this
+ * replaced the Sprint 01 aspirational `Cart` type.
+ */
 export function useCart() {
   return useQuery({
     queryKey: cartKeys.current(),
-    queryFn: () => browserFetch<{ data: Cart }>("/api/cart").then((r) => r.data),
+    queryFn: () => browserFetch<CartState>("/api/cart"),
     staleTime: 0,
   });
 }
 
-/**
- * Add to Cart is a low-risk, reversible mutation, so it applies optimistic UI
- * per §10.3: the cache updates immediately in `onMutate`, with automatic
- * rollback in `onError`.
- */
 export function useAddToCart() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: AddCartItemInput) =>
-      browserFetch<{ data: Cart }>("/api/cart/items", { method: "POST", body: input }),
-    onMutate: async (input) => {
-      await queryClient.cancelQueries({ queryKey: cartKeys.current() });
-      const previousCart = queryClient.getQueryData<Cart>(cartKeys.current());
-      return { previousCart, input };
+    mutationFn: (input: AddCartItemPayload) =>
+      browserFetch<CartEntry>("/api/cart/items", { method: "POST", body: input }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: cartKeys.current() });
     },
-    onError: (_err, _input, context) => {
-      if (context?.previousCart) {
-        queryClient.setQueryData(cartKeys.current(), context.previousCart);
-      }
+  });
+}
+
+export function useUpdateCartItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cartItemId, ...input }: UpdateCartItemPayload & { cartItemId: string }) =>
+      browserFetch<CartEntry>(`/api/cart/items/${cartItemId}`, { method: "PATCH", body: input }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: cartKeys.current() });
     },
+  });
+}
+
+export function useRemoveCartItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (cartItemId: string) =>
+      browserFetch<void>(`/api/cart/items/${cartItemId}`, { method: "DELETE" }),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.current() });
     },

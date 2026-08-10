@@ -24,8 +24,12 @@ export function StickyAddToCartBar({ product }: { product: Product }) {
       document.getElementById("purchase-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    if (!product.variantId) {
+      toast.error("This product isn't available for purchase yet.");
+      return;
+    }
     addToCart.mutate(
-      { productId: product.id, quantity: 1, customizationSelections: {} },
+      { variantId: product.variantId, quantity: 1 },
       {
         onSuccess: () => toast.success("Added to cart"),
         onError: () => toast.error("Couldn't add this to your cart. Please try again."),

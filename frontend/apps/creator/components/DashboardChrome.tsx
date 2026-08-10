@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Boxes,
+  FolderTree,
   LayoutDashboard,
   LineChart,
   MessageCircle,
@@ -32,6 +33,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
     { href: "/dashboard/orders", label: "Orders", icon: Package, badgeCount: pendingActions?.newOrders },
     { href: "/dashboard/products", label: "Products", icon: Boxes },
+    { href: "/dashboard/categories", label: "Categories", icon: FolderTree },
     { href: "/dashboard/inventory", label: "Inventory", icon: Boxes },
     { href: "/dashboard/messages", label: "Messages", icon: MessageCircle, badgeCount: pendingActions?.unreadMessages },
     { href: "/dashboard/reviews", label: "Reviews", icon: Star },
@@ -79,7 +81,14 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
               fallback={(session?.user?.name ?? "C").slice(0, 2)}
               size="sm"
             />
-            <Button variant="tertiary" size="sm" onClick={() => signOut()}>
+            <Button
+              variant="tertiary"
+              size="sm"
+              onClick={() => {
+                void fetch("/api/session/clear", { method: "POST" });
+                void signOut();
+              }}
+            >
               Sign Out
             </Button>
           </div>

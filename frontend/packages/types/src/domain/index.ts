@@ -61,6 +61,17 @@ export interface Product {
   customizationFields: CustomizationField[];
   materials: string[];
   tags: string[];
+  /**
+   * Sprint 02 — the real purchasable unit backing this catalog projection
+   * (`shared/db/schema/product.ts`'s `productVariants`). Optional because
+   * the buyer catalog/product-detail page itself is still Sprint 01's
+   * aspirational projection (see this file's top-level doc comment) and
+   * isn't wired to real Product data yet — but Add to Cart genuinely needs
+   * a real `variantId` to call the real Cart backend, so this field lets
+   * that connection be made correctly wherever real data *is* available,
+   * without fabricating one where it isn't.
+   */
+  variantId?: Id;
 }
 
 export type ProductSummary = Pick<
@@ -189,4 +200,269 @@ export interface CreatorProduct {
   updatedAt: string;
   variants?: CreatorProductVariant[];
   media?: CreatorProductMedia[];
+}
+
+/**
+ * Sprint 02 — Marketplace Foundation. These mirror the real backend
+ * response shapes exactly (field-for-field), the same "Sprint 01 —
+ * creator-side Product types" convention documented above: they are not
+ * the aspirational buyer-catalog projections (`Product`/`Cart`/`Category`
+ * above), they are what `modules/{name}/repository.ts` and `service.ts`
+ * actually return today.
+ */
+
+export type CreatorAddressType = "REGISTERED" | "WAREHOUSE" | "RETURN";
+
+export interface CreatorAddress {
+  id: Id;
+  creatorId: Id;
+  type: CreatorAddressType;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Never includes the decrypted account number/IFSC — only the display-safe subset `modules/creators/service.ts`'s `toPublicBankDetail` returns. */
+export interface CreatorBankDetail {
+  id: Id;
+  accountHolderName: string;
+  accountNumberLast4: string;
+  bankName: string;
+  branchName: string | null;
+  isVerified: boolean;
+  isPrimary: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreatorSocialPlatform =
+  | "INSTAGRAM"
+  | "FACEBOOK"
+  | "YOUTUBE"
+  | "PINTEREST"
+  | "TWITTER"
+  | "WEBSITE"
+  | "OTHER";
+
+export interface CreatorSocialLink {
+  id: Id;
+  creatorId: Id;
+  platform: CreatorSocialPlatform;
+  url: string;
+  displayOrder: number;
+  createdAt: string;
+}
+
+export type CreatorDocumentType =
+  | "GOVERNMENT_ID"
+  | "BUSINESS_REGISTRATION"
+  | "TAX_CERTIFICATE"
+  | "BANK_PROOF"
+  | "ADDRESS_PROOF"
+  | "OTHER";
+
+export type CreatorDocumentStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+
+export interface CreatorDocument {
+  id: Id;
+  creatorId: Id;
+  mediaId: Id;
+  type: CreatorDocumentType;
+  status: CreatorDocumentStatus;
+  reviewerId: Id | null;
+  reviewNotes: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+}
+
+export type CreatorOnboardingStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "ACTIVE" | "SUSPENDED" | "CLOSED";
+
+/** Real Category/Subcategory shape (`shared/db/schema/categories.ts`) — a `NULL` `parentId` is a top-level Category, non-null is a Subcategory. */
+export interface CategoryNode {
+  id: Id;
+  name: string;
+  slug: string;
+  description: string | null;
+  parentId: Id | null;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+/** Standalone Product Variant CRUD shape — same fields as `CreatorProductVariant` above but as its own type, matching `modules/products/schemas.ts`'s `createProductVariantSchema`/`updateProductVariantSchema` field-for-field. */
+export interface ProductVariantRecord {
+  id: Id;
+  productId: Id;
+  attributes: Record<string, string>;
+  priceAmount: number;
+  priceCurrency: string;
+  skuReference: string | null;
+  status: "ACTIVE" | "ARCHIVED";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VariantInventory {
+  variantId: Id;
+  quantityAvailable: number;
+  quantityReserved: number;
+  lowStockThreshold: number | null;
+  updatedAt: string | null;
+}
+
+export type UserAddressType = "SHIPPING" | "BILLING";
+
+export interface UserAddress {
+  id: Id;
+  userId: Id;
+  label: string;
+  type: UserAddressType;
+  recipientName: string;
+  recipientPhone: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WishlistEntry {
+  id: Id;
+  productId: Id;
+  createdAt: string;
+  product: {
+    id: Id;
+    title: string;
+    slug: string;
+    status: ProductStatus;
+  };
+}
+
+/** Real Cart shape (`modules/cart/repository.ts`'s `listCartItems` join) — deliberately distinct from the aspirational `Cart`/`CartLineItem` above, which this Sprint's real backend does not produce. */
+export interface CartEntry {
+  id: Id;
+  variantId: Id;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+  variant: {
+    id: Id;
+    productId: Id;
+    attributes: Record<string, string>;
+    priceAmount: number;
+    priceCurrency: string;
+    status: "ACTIVE" | "ARCHIVED";
+  };
+  product: {
+    id: Id;
+    title: string;
+    slug: string;
+    status: ProductStatus;
+  };
+  quantityAvailable: number | null;
+}
+
+export interface CartState {
+  items: CartEntry[];
+  itemCount: number;
+  subtotalAmount: number;
+  currency: string;
+}
+
+export type RealOrderStatus = "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+
+export interface OrderItemRecord {
+  id: Id;
+  orderId: Id;
+  storeId: Id;
+  productId: Id;
+  variantId: Id;
+  titleSnapshot: string;
+  variantAttributesSnapshot: string | null;
+  unitPriceAmount: number;
+  quantity: number;
+  lineTotalAmount: number;
+  createdAt: string;
+}
+
+export interface OrderStatusHistoryEntry {
+  id: Id;
+  orderId: Id;
+  fromStatus: RealOrderStatus | null;
+  toStatus: RealOrderStatus;
+  changedById: Id | null;
+  note: string | null;
+  createdAt: string;
+}
+
+/** Matches `modules/orders/repository.ts`'s `listOrdersForUser` row shape — the summary/list form, no items/history joined in. */
+export interface OrderRecord {
+  id: Id;
+  orderNumber: string;
+  userId: Id;
+  status: RealOrderStatus;
+  subtotalAmount: number;
+  currency: string;
+  shippingRecipientName: string;
+  shippingLine1: string;
+  shippingLine2: string | null;
+  shippingCity: string;
+  shippingState: string;
+  shippingPostalCode: string;
+  shippingCountry: string;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Matches `modules/orders/repository.ts`'s `findOrderById` shape — the detail form, with items + status history joined in. */
+export interface OrderDetail extends OrderRecord {
+  items: OrderItemRecord[];
+  statusHistory: OrderStatusHistoryEntry[];
+}
+
+export interface ReviewRecord {
+  id: Id;
+  productId: Id;
+  userId: Id;
+  rating: number;
+  title: string | null;
+  body: string;
+  isVerifiedPurchase: boolean;
+  createdAt: string;
+  updatedAt: string;
+  authorDisplayName: string;
+}
+
+export type NotificationType =
+  | "ORDER_STATUS_CHANGED"
+  | "ORDER_CANCELLED"
+  | "PRODUCT_REVIEW_RECEIVED"
+  | "CREATOR_APPLICATION_STATUS"
+  | "CREATOR_DOCUMENT_REVIEWED"
+  | "LOW_STOCK_ALERT"
+  | "GENERAL";
+
+export interface NotificationRecord {
+  id: Id;
+  userId: Id;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data: Record<string, unknown> | null;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
 }

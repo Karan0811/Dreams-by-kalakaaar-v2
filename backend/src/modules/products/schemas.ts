@@ -11,6 +11,25 @@ export const productVariantInputSchema = z.object({
   initialQuantity: z.number().int().nonnegative().default(0),
 });
 
+/** Sprint 02 — standalone Product Variant CRUD (add/update/archive a variant on an *existing* Product, as opposed to `productVariantInputSchema` above which only creates variants inline with a new Product). */
+export const createProductVariantSchema = z.object({
+  attributes: z.record(z.string(), z.string()).default({}),
+  priceAmount: z.number().int().nonnegative(),
+  priceCurrency: z.string().length(3).default('INR'),
+  skuReference: z.string().trim().max(64).optional(),
+  initialQuantity: z.number().int().nonnegative().default(0),
+});
+export type CreateProductVariantInput = z.infer<typeof createProductVariantSchema>;
+
+export const updateProductVariantSchema = z.object({
+  attributes: z.record(z.string(), z.string()).optional(),
+  priceAmount: z.number().int().nonnegative().optional(),
+  priceCurrency: z.string().length(3).optional(),
+  skuReference: z.string().trim().max(64).nullable().optional(),
+  status: z.enum(['ACTIVE', 'ARCHIVED']).optional(),
+});
+export type UpdateProductVariantInput = z.infer<typeof updateProductVariantSchema>;
+
 export const createProductSchema = z.object({
   title: z.string().trim().min(3).max(200),
   description: z.string().trim().min(20).max(5000),

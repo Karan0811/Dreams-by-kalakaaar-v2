@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "@dbk/auth/server";
-import { addCartItem, ApiError } from "@dbk/api-client/server";
+import { addCartItem } from "@dbk/api-client/server";
 import { addCartItemSchema } from "@dbk/utils";
+import { requireAccessToken } from "@/lib/api-auth";
+import { apiErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Please sign in to continue.", correlationId: crypto.randomUUID() } },
-      { status: 401 },
-    );
-  }
+  const auth = await requireAccessToken();
+  if ("errorResponse" in auth) return auth.errorResponse;
 
   const rawBody: unknown = await request.json().catch(() => null);
   const parsed = addCartItemSchema.safeParse(rawBody);
@@ -29,18 +25,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await addCartItem(session.id, parsed.data);
-    return NextResponse.json(result);
+    const result = await addCartItem(auth.accessToken, parsed.data);
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof ApiError) {
-      return NextResponse.json(
-        { error: { code: error.code, message: error.message, details: error.details, correlationId: error.correlationId } },
-        { status: error.status },
-      );
-    }
-    return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: "Something went wrong.", correlationId: crypto.randomUUID() } },
-      { status: 500 },
-    );
+    return apiErrorResponse(error);
   }
 }

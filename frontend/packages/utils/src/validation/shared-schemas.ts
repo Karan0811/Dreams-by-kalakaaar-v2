@@ -40,13 +40,26 @@ export const displayNameSchema = z
   .min(2, "Name must be at least 2 characters")
   .max(80, "Name must be under 80 characters");
 
+/**
+ * Sprint 02 — matches the real backend contract
+ * (`modules/cart/schemas.ts`'s `addCartItemSchema`): a Cart line item is
+ * keyed on `variantId`, not `productId` — price and inventory are both
+ * variant-level. Replaces the Sprint 01 placeholder shape above, which
+ * modeled a `productId` + `customizationSelections` cart the real backend
+ * was never built to accept.
+ */
 export const addCartItemSchema = z.object({
-  productId: z.string().uuid("Invalid product id"),
-  quantity: z.number().int().min(1).max(20),
-  customizationSelections: z.record(z.string(), z.string()).optional(),
+  variantId: z.string().uuid("Invalid variant id"),
+  quantity: z.number().int().min(1).max(99).default(1),
 });
 
 export type AddCartItemInput = z.infer<typeof addCartItemSchema>;
+
+export const updateCartItemSchema = z.object({
+  quantity: z.number().int().min(1).max(99),
+});
+
+export type UpdateCartItemInput = z.infer<typeof updateCartItemSchema>;
 
 /**
  * Sprint 01 — creator Product form. Mirrors
