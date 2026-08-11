@@ -39,11 +39,30 @@ export function SignupForm() {
 
     // Registers a matching backend account (see `bridgeBackendRegistration`'s
     // doc comment for why sign-up needs registration, not login).
-    await fetch("/api/session/bridge-register", {
+    //
+    // FIX: this call's result was previously discarded — the flow always
+    // redirected to /verify-email even when this failed, leaving a Better
+    // Auth account with no matching backend user. Every backend-dependent
+    // feature (cart, orders, addresses, wishlist, ...) requires that
+    // backend account, so a silent failure here isn't a minor gap, it's a
+    // permanently broken account with no visible cause. The remaining
+    // known gap: the Better Auth account itself isn't rolled back on
+    // failure (no client-side admin API for that), so a retry with the
+    // same email will hit Better Auth's "already registered" error even
+    // though sign-up never really completed — tracked as a follow-up, not
+    // silently hidden from the person hitting it.
+    const bridgeResponse = await fetch("/api/session/bridge-register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: values.email, password: values.password, displayName: values.displayName }),
     });
+
+    if (!bridgeResponse.ok) {
+      setFormError(
+        "Your account was created, but we couldn't finish setting it up. Please contact support before continuing — signing in may not work yet.",
+      );
+      return;
+    }
 
     router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
   }

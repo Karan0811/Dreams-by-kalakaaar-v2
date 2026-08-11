@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAdjustInventory, ApiError } from "@dbk/api-client";
 import type { CreatorProductVariant } from "@dbk/types";
 import { formatMoney } from "@dbk/utils";
-import { Alert, Button, Card, Input } from "@dbk/ui";
+import { Button, Card, Input } from "@dbk/ui";
 
 function VariantRow({
   storeId,
@@ -40,6 +40,11 @@ function VariantRow({
         <p className={`text-[13px] ${lowStock ? "text-warning" : "text-text-secondary"}`}>
           {variant.quantityAvailable ?? 0} in stock{lowStock ? " · low stock" : ""}
         </p>
+        {adjust.isError ? (
+          <p className="mt-1 text-[13px] text-error">
+            {adjust.error instanceof ApiError ? adjust.error.message : "Couldn't update stock. Please try again."}
+          </p>
+        ) : null}
       </div>
       <div className="flex items-center gap-2">
         <Input
@@ -71,16 +76,9 @@ export function ProductInventoryPanel({
   productId: string;
   variants: CreatorProductVariant[];
 }) {
-  const adjust = useAdjustInventory(storeId, productId);
-
   return (
     <Card className="flex flex-col gap-[var(--space-200)]">
       <p className="text-[13px] font-medium text-text-secondary">Inventory</p>
-      {adjust.isError ? (
-        <Alert variant="error" title="Couldn't update stock">
-          {adjust.error instanceof ApiError ? adjust.error.message : "Something went wrong."}
-        </Alert>
-      ) : null}
       {variants.length === 0 ? (
         <p className="text-[13px] text-text-secondary">No variants.</p>
       ) : (

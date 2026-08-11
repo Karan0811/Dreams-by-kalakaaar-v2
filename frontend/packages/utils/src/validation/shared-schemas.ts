@@ -14,10 +14,20 @@ export const emailSchema = z
   .min(1, "Email is required")
   .email("Enter a valid email address");
 
-/** Mirrors the password policy enforced server-side (12-security-architecture.md). */
+/**
+ * Mirrors the password policy enforced server-side
+ * (`backend/src/shared/validation/common-schemas.ts`'s `passwordSchema`,
+ * 12-security-architecture.md). FIX: this previously said `min(10)` despite
+ * the comment claiming to mirror the backend, which requires 12 — a
+ * password of exactly 10 or 11 characters passed this validation and
+ * Better Auth's own (also-wrong) 10-char minimum, only to be rejected by
+ * the backend's real `/v1/auth/register` call during the auth bridge,
+ * silently stranding the account (see `better-auth.config.ts`'s
+ * `minPasswordLength` fix for the other half of this).
+ */
 export const passwordSchema = z
   .string()
-  .min(10, "Password must be at least 10 characters")
+  .min(12, "Password must be at least 12 characters")
   .regex(/[a-z]/, "Password must include a lowercase letter")
   .regex(/[A-Z]/, "Password must include an uppercase letter")
   .regex(/[0-9]/, "Password must include a number");
@@ -99,14 +109,3 @@ export const productEditFormSchema = z.object({
 });
 export type ProductEditFormInput = z.infer<typeof productEditFormSchema>;
 
-export const addressSchema = z.object({
-  fullName: displayNameSchema,
-  phone: phoneSchema,
-  line1: z.string().trim().min(1, "Address line is required"),
-  line2: z.string().trim().optional(),
-  city: z.string().trim().min(1, "City is required"),
-  state: z.string().trim().min(1, "State is required"),
-  pinCode: pinCodeSchema,
-});
-
-export type AddressInput = z.infer<typeof addressSchema>;

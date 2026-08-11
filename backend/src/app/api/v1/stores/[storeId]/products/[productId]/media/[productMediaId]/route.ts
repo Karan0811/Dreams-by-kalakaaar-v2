@@ -10,7 +10,7 @@ import * as productsService from '@/modules/products/service';
 export const PATCH = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
   const storeId = params.storeId as string;
-  await requireStoreProductOwnership(auth.userId, storeId, 'products:write');
+  await requireStoreProductOwnership(auth.userId, storeId, params.productId as string, 'products:write');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   const body = updateProductMediaSchema.parse(await request.json());
@@ -27,7 +27,7 @@ export const PATCH = withRouteHandler(async ({ request, correlationId, params })
 export const DELETE = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
   const storeId = params.storeId as string;
-  await requireStoreProductOwnership(auth.userId, storeId, 'products:write');
+  await requireStoreProductOwnership(auth.userId, storeId, params.productId as string, 'products:write');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   await productsService.deleteProductMedia(params.productId as string, params.productMediaId as string);

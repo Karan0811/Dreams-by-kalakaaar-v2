@@ -8,7 +8,7 @@ import * as productsService from '@/modules/products/service';
 
 export const GET = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
-  await requireStoreProductOwnership(auth.userId, params.storeId as string, 'products:read');
+  await requireStoreProductOwnership(auth.userId, params.storeId as string, params.productId as string, 'products:read');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   const product = await productsService.getProductDetail(params.productId as string);
@@ -18,7 +18,7 @@ export const GET = withRouteHandler(async ({ request, correlationId, params }) =
 
 export const PATCH = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
-  await requireStoreProductOwnership(auth.userId, params.storeId as string, 'products:write');
+  await requireStoreProductOwnership(auth.userId, params.storeId as string, params.productId as string, 'products:write');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   const rawBody = await request.json();
@@ -53,7 +53,7 @@ export const PATCH = withRouteHandler(async ({ request, correlationId, params })
  */
 export const DELETE = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
-  await requireStoreProductOwnership(auth.userId, params.storeId as string, 'products:write');
+  await requireStoreProductOwnership(auth.userId, params.storeId as string, params.productId as string, 'products:write');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   await productsService.deleteProduct(params.productId as string);

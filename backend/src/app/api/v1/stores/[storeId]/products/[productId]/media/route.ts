@@ -15,7 +15,7 @@ import * as productsService from '@/modules/products/service';
 export const POST = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
   const storeId = params.storeId as string;
-  await requireStoreProductOwnership(auth.userId, storeId, 'products:write');
+  await requireStoreProductOwnership(auth.userId, storeId, params.productId as string, 'products:write');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   const body = attachProductMediaSchema.parse(await request.json());

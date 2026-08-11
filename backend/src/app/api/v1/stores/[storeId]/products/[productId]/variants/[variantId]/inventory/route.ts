@@ -10,7 +10,7 @@ import * as productsService from '@/modules/products/service';
 export const GET = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
   const storeId = params.storeId as string;
-  await requireStoreProductOwnership(auth.userId, storeId, 'products:read');
+  await requireStoreProductOwnership(auth.userId, storeId, params.productId as string, 'products:read');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   const inventoryRow = await productsService.getVariantInventory(
@@ -29,7 +29,7 @@ export const GET = withRouteHandler(async ({ request, correlationId, params }) =
 export const PATCH = withRouteHandler(async ({ request, correlationId, params }) => {
   const auth = await authenticate(request);
   const storeId = params.storeId as string;
-  await requireStoreProductOwnership(auth.userId, storeId, 'products:write');
+  await requireStoreProductOwnership(auth.userId, storeId, params.productId as string, 'products:write');
   const rateLimit = await enforceRateLimit('standard', auth.userId);
 
   const body = adjustInventorySchema.parse(await request.json());

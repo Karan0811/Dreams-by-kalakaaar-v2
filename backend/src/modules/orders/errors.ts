@@ -6,6 +6,13 @@ export class OrderNotFoundError extends NotFoundError {
   }
 }
 
+/** FIX: checkoutFromCart previously threw a plain `Error` for this, which `error-handler.ts` has no choice but to map to a generic 500 — masking a legitimate 404 (bad or foreign shippingAddressId) as a server fault. */
+export class ShippingAddressNotFoundError extends NotFoundError {
+  constructor() {
+    super('Shipping address not found.');
+  }
+}
+
 export class EmptyCartError extends ValidationError {
   constructor() {
     super('Your cart is empty. Add items before placing an order.', undefined, 422);

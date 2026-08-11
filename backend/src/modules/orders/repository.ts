@@ -10,7 +10,7 @@ import {
   inventory,
   userAddresses,
 } from '@/shared/db/schema';
-import { EmptyCartError, CartItemStockChangedError } from './errors';
+import { EmptyCartError, CartItemStockChangedError, ShippingAddressNotFoundError } from './errors';
 import type { ListMyOrdersQuery } from './schemas';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -37,7 +37,7 @@ function generateOrderNumber(): string {
 export async function checkoutFromCart(userId: string, addressId: string) {
   return withTransaction(async (tx) => {
     const address = await findAddressForOrderTx(tx, userId, addressId);
-    if (!address) throw new Error('Shipping address not found.');
+    if (!address) throw new ShippingAddressNotFoundError();
 
     const lines = await tx
       .select({

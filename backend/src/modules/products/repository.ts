@@ -24,6 +24,7 @@ import type {
   UpdateProductVariantInput,
 } from './schemas';
 import { sortUsesCursorPagination } from './schemas';
+import * as sharedMediaRepository from '@/shared/storage/media-repository';
 
 /** Products module Repository Layer — 08-database-design.md Section 8. */
 
@@ -570,8 +571,6 @@ export async function countMediaForProduct(productId: string): Promise<number> {
 /* ------------------------------------------------------------------------ */
 /* Sprint 01 — Product Images                                               */
 /* ------------------------------------------------------------------------ */
-
-import * as sharedMediaRepository from '@/shared/storage/media-repository';
 
 export async function createPendingMediaRow(params: {
   uploadedById: string;

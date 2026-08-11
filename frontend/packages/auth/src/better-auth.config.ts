@@ -62,7 +62,16 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    minPasswordLength: 10,
+    // FIX: was 10, which is *weaker* than the backend's own passwordSchema
+    // (`shared/validation/common-schemas.ts`, min 12). A 10–11 character
+    // password would pass Better Auth's sign-up (creating a real Better
+    // Auth account) and then fail the backend's `/v1/auth/register` call
+    // that bridges it (`access-token.ts`'s `bridgeBackendRegistration`),
+    // leaving a Better-Auth-only account with no matching backend user —
+    // permanently broken, since every BFF route requires the backend JWT.
+    // Must stay >= the backend's minimum; keeping them equal (12) avoids
+    // rejecting a password the frontend already accepted.
+    minPasswordLength: 12,
     // FIX: `requireEmailVerification: true` with no `sendResetPassword`
     // callback means Better Auth has no way to actually deliver a reset
     // link — the Forgot Password screen (07-ui-screens-wireframes.md §4.4)

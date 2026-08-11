@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '@/shared/db/client';
 import { wishlistItems, products } from '@/shared/db/schema';
 
@@ -17,7 +17,11 @@ export async function listWishlistItems(userId: string) {
     })
     .from(wishlistItems)
     .innerJoin(products, eq(products.id, wishlistItems.productId))
-    .where(eq(wishlistItems.userId, userId))
+    // FIX: previously joined without excluding soft-deleted products (the
+    // `notDeleted` filter established in `products/repository.ts`) — a
+    // deleted product stayed in a buyer's wishlist forever instead of
+    // disappearing like it does everywhere else it's read from.
+    .where(and(eq(wishlistItems.userId, userId), isNull(products.deletedAt)))
     .orderBy(desc(wishlistItems.createdAt));
 }
 

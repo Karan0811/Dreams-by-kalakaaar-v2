@@ -59,6 +59,12 @@ async function getProductOrThrow(productId: string) {
   return product;
 }
 
+/** Used only by `authorization.ts`'s `requireStoreProductOwnership` to verify a productId in a URL actually belongs to the storeId also in that URL. */
+export async function getProductStoreId(productId: string): Promise<string | null> {
+  const product = await productsRepository.findProductById(productId);
+  return product?.storeId ?? null;
+}
+
 export async function getProductDetail(productId: string) {
   const product = await getProductOrThrow(productId);
   const [variants, media] = await Promise.all([
