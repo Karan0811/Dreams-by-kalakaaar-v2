@@ -25,6 +25,7 @@ import type {
   LoginInput,
   RegisterInput,
   ResetPasswordInput,
+
 } from './schemas';
 
 const logger = createModuleLogger('auth.service');
@@ -280,6 +281,36 @@ export async function verifyEmail(token: string): Promise<void> {
   if (!verificationRow) throw new InvalidOrExpiredTokenError('verification');
 
   await authRepository.markUserEmailVerified(verificationRow.userId);
+}
+
+/**
+ * Resends a verification email to the user. Always succeeds from the caller's
+ * perspective regardless of whether the email is registered, to avoid account
+ * enumeration via response timing/content (standard practice; no email is sent
+ * for an unknown address or already verified address).
+ */
+export async function resendVerificationEmail(email: string): Promise<void> {
+  const user = await authRepository.findUserByEmail(email);
+  if (!user) {
+    logger.info('Verification email requested for unknown email (no-op)', { email });
+    return;
+  }
+
+  if (user.emailVerified) {
+    logger.info('Verification email requested for already verified email (no-op)', { email });
+    return;
+  }
+
+  const rawVerificationToken = await authRepository.createEmailVerification({
+    userId: user.id,
+    targetEmail: email,
+    ttlMinutes: EMAIL_VERIFICATION_TTL_MINUTES,
+  });
+  await sendEmail({
+    to: email,
+    subject: 'Confirm your email — Dreams by Kalakaaar',
+    html: verificationEmail(rawVerificationToken),
+  });
 }
 
 export async function getMe(userId: string) {

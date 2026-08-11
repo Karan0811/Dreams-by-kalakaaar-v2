@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
   }
 
   const bridged = await bridgeBackendRegistration(body.email, body.password, body.displayName);
-  if (!bridged) {
+  if (!bridged.ok) {
     return NextResponse.json(
-      { error: { code: "BRIDGE_FAILED", message: "Could not establish a backend account.", correlationId: crypto.randomUUID() } },
+      { error: { code: "BRIDGE_FAILED", message: bridged.reason, correlationId: crypto.randomUUID() } },
       { status: 502 },
     );
   }

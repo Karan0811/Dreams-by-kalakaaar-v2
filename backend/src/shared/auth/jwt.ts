@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify, importPKCS8, importSPKI, type JWTPayload, type KeyLike } from 'jose';
+import { SignJWT, jwtVerify, importPKCS8, importSPKI, generateKeyPair, type JWTPayload, type KeyLike } from 'jose';
 import { env } from '@/shared/config/env';
 
 /**
@@ -28,17 +28,42 @@ export interface AccessTokenClaims extends JWTPayload {
 
 let cachedPrivateKey: KeyLike | undefined;
 let cachedPublicKey: KeyLike | undefined;
+let developmentKeyPair: { privateKey: KeyLike; publicKey: KeyLike } | undefined;
 
 async function getPrivateKey(): Promise<KeyLike> {
   if (!cachedPrivateKey) {
-    cachedPrivateKey = await importPKCS8(normalizePem(env.JWT_PRIVATE_KEY), ALG);
+    // In development with placeholder keys, generate a temporary key pair
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const isPlaceholder = env.JWT_PRIVATE_KEY.includes('replace-with') || 
+                         env.JWT_PRIVATE_KEY.length < 100;
+    
+    if (isDevelopment && isPlaceholder) {
+      if (!developmentKeyPair) {
+        developmentKeyPair = await generateKeyPair(ALG);
+      }
+      cachedPrivateKey = developmentKeyPair.privateKey;
+    } else {
+      cachedPrivateKey = await importPKCS8(normalizePem(env.JWT_PRIVATE_KEY), ALG);
+    }
   }
   return cachedPrivateKey;
 }
 
 async function getPublicKey(): Promise<KeyLike> {
   if (!cachedPublicKey) {
-    cachedPublicKey = await importSPKI(normalizePem(env.JWT_PUBLIC_KEY), ALG);
+    // In development with placeholder keys, use the generated key pair
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const isPlaceholder = env.JWT_PUBLIC_KEY.includes('replace-with') || 
+                         env.JWT_PUBLIC_KEY.length < 100;
+    
+    if (isDevelopment && isPlaceholder) {
+      if (!developmentKeyPair) {
+        developmentKeyPair = await generateKeyPair(ALG);
+      }
+      cachedPublicKey = developmentKeyPair.publicKey;
+    } else {
+      cachedPublicKey = await importSPKI(normalizePem(env.JWT_PUBLIC_KEY), ALG);
+    }
   }
   return cachedPublicKey;
 }

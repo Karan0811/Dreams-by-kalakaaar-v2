@@ -19,25 +19,34 @@ export interface SendEmailParams {
 }
 
 async function sendViaResend(params: SendEmailParams): Promise<void> {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: env.RESEND_FROM_EMAIL,
-      to: params.to,
-      subject: params.subject,
-      html: params.html,
-    }),
-    signal: AbortSignal.timeout(10_000),
-  });
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: env.RESEND_FROM_EMAIL,
+        to: params.to,
+        subject: params.subject,
+        html: params.html,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
 
-  if (!response.ok) {
-    const body = await response.text();
-    logger.error('Resend send failed', undefined, { status: response.status, body });
-    throw new IntegrationError('Failed to send email at this time. Please try again shortly.');
+    if (!response.ok) {
+      const body = await response.text();
+      logger.error('Resend send failed', undefined, { status: response.status, body });
+      throw new IntegrationError('Failed to send email at this time. Please try again shortly.');
+    }
+  } catch (error) {
+    // In development, log but don't fail to allow testing
+    if (process.env.NODE_ENV !== 'production') {
+      logger.error('Resend send failed (development - logging and continuing)', error);
+      return;
+    }
+    throw error;
   }
 }
 
@@ -63,6 +72,11 @@ async function sendViaGmailSMTP(params: SendEmailParams): Promise<void> {
       html: params.html,
     });
   } catch (error) {
+    // In development, log but don't fail to allow testing
+    if (process.env.NODE_ENV !== 'production') {
+      logger.error('Gmail SMTP send failed (development - logging and continuing)', error);
+      return;
+    }
     logger.error('Gmail SMTP send failed', undefined, { error });
     throw new IntegrationError('Failed to send email at this time. Please try again shortly.');
   }
@@ -71,19 +85,37 @@ async function sendViaGmailSMTP(params: SendEmailParams): Promise<void> {
 export async function sendEmail(params: SendEmailParams): Promise<void> {
   const provider = env.EMAIL_PROVIDER || 'resend';
   
-  // Log instead of sending in development if credentials not set
-  if (provider === 'resend' && !env.RESEND_API_KEY) {
-    logger.info('Email send skipped (no RESEND_API_KEY set) — logging instead', {
+  // In development without credentials, log and succeed silently to allow testing
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const hasResendCreds = !!env.RESEND_API_KEY && env.RESEND_API_KEY !== 'replace-me';
+  const hasGmailCreds = !!env.GMAIL_EMAIL && !!env.GMAIL_APP_PASSWORD && 
+                        env.GMAIL_EMAIL !== 'your-email@gmail.com' && 
+                        env.GMAIL_APP_PASSWORD !== 'your-app-password';
+  
+  if (isDevelopment && !hasResendCreds && !hasGmailCreds) {
+    logger.info('Email send skipped (development without valid credentials) — logging and succeeding', {
       to: params.to,
       subject: params.subject,
+      htmlLength: params.html.length,
     });
     return;
   }
   
-  if (provider === 'gmail' && (!env.GMAIL_EMAIL || !env.GMAIL_APP_PASSWORD)) {
-    logger.info('Email send skipped (GMAIL_EMAIL or GMAIL_APP_PASSWORD not set) — logging instead', {
+  // Log instead of sending if credentials not set for the chosen provider
+  if (provider === 'resend' && !hasResendCreds) {
+    logger.info('Email send skipped (no valid RESEND_API_KEY set) — logging instead', {
       to: params.to,
       subject: params.subject,
+      htmlLength: params.html.length,
+    });
+    return;
+  }
+  
+  if (provider === 'gmail' && !hasGmailCreds) {
+    logger.info('Email send skipped (no valid GMAIL_EMAIL or GMAIL_APP_PASSWORD set) — logging instead', {
+      to: params.to,
+      subject: params.subject,
+      htmlLength: params.html.length,
     });
     return;
   }

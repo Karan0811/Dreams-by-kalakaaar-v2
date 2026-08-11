@@ -47,7 +47,7 @@ function backendBaseUrl(): string {
  */
 export async function bridgeBackendSession(email: string, password: string): Promise<boolean> {
   try {
-    const response = await fetch(`${backendBaseUrl()}/api/v1/auth/login`, {
+    const response = await fetch(`${backendBaseUrl()}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -96,14 +96,17 @@ export async function bridgeBackendRegistration(
   email: string,
   password: string,
   displayName: string,
-): Promise<boolean> {
+): Promise<{ ok: true } | { ok: false; reason: string }> {
   try {
-    const response = await fetch(`${backendBaseUrl()}/api/v1/auth/register`, {
+    const response = await fetch(`${backendBaseUrl()}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, displayName }),
     });
-    if (!response.ok) return false;
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({ error: { message: "Unknown error" } }));
+      return { ok: false, reason: errorBody.error?.message || `Backend registration failed: ${response.status}` };
+    }
 
     const body = (await response.json()) as { accessToken: string; accessTokenExpiresIn: number };
     const refreshToken = extractRefreshTokenCookie(response);
@@ -126,9 +129,9 @@ export async function bridgeBackendRegistration(
       });
     }
 
-    return true;
-  } catch {
-    return false;
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, reason: error instanceof Error ? error.message : "Network error during bridge registration" };
   }
 }
 
