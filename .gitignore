@@ -4,3 +4,13 @@ dist/
 .next/
 .env.local
 .env
+zit5vI7q
+# Local/generated secrets
+jwt-private.pem
+jwt-public.pem
+
+# Large accidental/generated files
+zit5vI7q
+*.zip
+*.tsbuildinfo
+.DS_Store
