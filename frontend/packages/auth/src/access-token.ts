@@ -25,7 +25,8 @@ const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 14;
 function backendBaseUrl(): string {
   const baseUrl = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) throw new Error("API_BASE_URL is not configured.");
-  return baseUrl;
+  // Normalize the base URL to ensure it doesn't end with a slash
+  return baseUrl.replace(/\/$/, "");
 }
 
 /**
@@ -46,7 +47,7 @@ function backendBaseUrl(): string {
  */
 export async function bridgeBackendSession(email: string, password: string): Promise<boolean> {
   try {
-    const response = await fetch(`${backendBaseUrl()}/auth/login`, {
+    const response = await fetch(`${backendBaseUrl()}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -97,7 +98,7 @@ export async function bridgeBackendRegistration(
   displayName: string,
 ): Promise<boolean> {
   try {
-    const response = await fetch(`${backendBaseUrl()}/auth/register`, {
+    const response = await fetch(`${backendBaseUrl()}/api/v1/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, displayName }),

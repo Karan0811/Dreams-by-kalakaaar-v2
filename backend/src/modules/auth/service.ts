@@ -68,7 +68,41 @@ async function issueTokenPairForSession(params: {
 
 export async function register(input: RegisterInput) {
   const existing = await authRepository.findUserByEmail(input.email);
-  if (existing) throw new EmailAlreadyRegisteredError();
+  
+  // Idempotent registration: if user already exists in our database,
+  // verify the password matches and proceed with login flow instead.
+  // This handles the case where Better Auth (frontend) already created
+  // the user, and we're being called as a bridge to sync/issue tokens.
+  if (existing) {
+    // Verify credentials match before allowing bridge registration
+    const account = await authRepository.findCredentialAccount(existing.id);
+    if (!account?.passwordHash) {
+      throw new EmailAlreadyRegisteredError();
+    }
+
+    const isValid = await verifyPassword(account.passwordHash, input.password);
+    if (!isValid) {
+      throw new InvalidCredentialsError();
+    }
+
+    // User exists and credentials match - treat as login
+    let signInResult;
+    try {
+      signInResult = await auth.api.signInEmail({
+        body: { email: input.email, password: input.password },
+      });
+    } catch {
+      throw new InvalidCredentialsError();
+    }
+
+    const tokens = await issueTokenPairForSession({
+      userId: existing.id,
+      email: existing.email,
+      sessionToken: signInResult.token ?? '',
+    });
+
+    return { user: signInResult.user, ...tokens };
+  }
 
   if (await isPasswordBreached(input.password)) {
     throw new PasswordBreachedError();
