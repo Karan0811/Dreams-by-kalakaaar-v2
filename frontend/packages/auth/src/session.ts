@@ -28,7 +28,8 @@ export async function getServerSession(): Promise<SessionUser | null> {
     });
     if (!response.ok) return null;
     const body = (await response.json()) as { data?: { id: string; email: string; emailVerified: boolean; roles: string[] } };
-    const user = body.data;
+    const user = body;
+    console.log("getServerSession user:", user);
     if (!user) return null;
     const roles = toRoles(user.roles);
     return { id: user.id as SessionUser["id"], email: user.email, displayName: user.email, avatarUrl: null,
