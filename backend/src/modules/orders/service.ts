@@ -1,10 +1,20 @@
 import * as ordersRepository from './repository';
-import { OrderNotFoundError, OrderNotCancellableError, InvalidOrderStatusTransitionError } from './errors';
+import {
+  CheckoutPaymentUnavailableError,
+  OrderNotFoundError,
+  OrderNotCancellableError,
+  InvalidOrderStatusTransitionError,
+} from './errors';
 import * as notificationsService from '@/modules/notifications/service';
 import type { ListMyOrdersQuery } from './schemas';
 
 export async function createOrder(userId: string, shippingAddressId: string) {
-  return ordersRepository.checkoutFromCart(userId, shippingAddressId);
+  // Never create an order or decrement stock without a verified payment.
+  // Keeping the endpoint's explicit 402 response lets clients show an honest
+  // unavailable state rather than implying that an unpaid order was accepted.
+  void userId;
+  void shippingAddressId;
+  throw new CheckoutPaymentUnavailableError();
 }
 
 export async function listMyOrders(userId: string, query: ListMyOrdersQuery) {

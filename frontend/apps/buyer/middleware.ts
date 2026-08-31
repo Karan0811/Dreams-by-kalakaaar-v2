@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
 
 /**
  * Cookie-presence check only — fast, edge-safe, and intentionally *not*
@@ -27,7 +26,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionCookie = getSessionCookie(request);
+  const sessionCookie = request.cookies.get("dbk_access_token");
 
   if (!sessionCookie) {
     const loginUrl = new URL("/login", request.url);

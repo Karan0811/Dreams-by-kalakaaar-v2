@@ -140,7 +140,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, type SignupInput } from "@dbk/utils";
-import { signUp } from "@dbk/auth";
 import { Alert, Button, Checkbox, FormField, Input, Label, PasswordInput } from "@dbk/ui";
 
 export function SignupForm() {
@@ -159,32 +158,8 @@ export function SignupForm() {
 
   async function onSubmit(values: SignupInput) {
     setFormError(null);
-    const { error } = await signUp.email({
-      email: values.email,
-      password: values.password,
-      name: values.displayName,
-    });
-
-    if (error) {
-      // §4.2 AUTH-01: never confirms whether the email is already registered.
-      setFormError("We couldn't complete your sign-up with those details. Please try again.");
-      return;
-    }
-
-    // Registers a matching backend account (see `bridgeBackendRegistration`'s
-    // doc comment for why sign-up needs registration, not login).
-    //
-    // FIX: this call's result was previously discarded — the flow always
-    // redirected to /verify-email even when this failed, leaving a Better
-    // Auth account with no matching backend user. Every backend-dependent
-    // feature (cart, orders, addresses, wishlist, ...) requires that
-    // backend account, so a silent failure here isn't a minor gap, it's a
-    // permanently broken account with no visible cause. The remaining
-    // known gap: the Better Auth account itself isn't rolled back on
-    // failure (no client-side admin API for that), so a retry with the
-    // same email will hit Better Auth's "already registered" error even
-    // though sign-up never really completed — tracked as a follow-up, not
-    // silently hidden from the person hitting it.
+    // Register directly with the canonical backend identity; no frontend
+    // Better Auth identity is created first.
     const bridgeResponse = await fetch("/api/session/bridge-register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

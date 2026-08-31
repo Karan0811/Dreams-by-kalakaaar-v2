@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull, isNotNull, or } from 'drizzle-orm';
 import { db } from '@/shared/db/client';
 import { permissions, rolePermissions, roles, userRoles } from '@/shared/db/schema';
 
@@ -22,6 +22,11 @@ export interface EffectivePermissions {
  * platform-scoped roles and any store-scoped roles for the given store
  * (08-database-design.md Section 6.4 — `storeId IS NULL` rows are
  * platform-wide grants).
+ * 
+ * When storeId is not provided, loads ALL roles (both platform-scoped and
+ * store-scoped) so that JWT tokens contain the complete role set for frontend
+ * authorization decisions. The specific store-scoped permissions are then
+ * filtered at request time by the authorize middleware.
  */
 export async function loadEffectivePermissions(
   userId: string,
@@ -36,7 +41,7 @@ export async function loadEffectivePermissions(
         eq(userRoles.userId, userId),
         storeId
           ? or(isNull(userRoles.storeId), eq(userRoles.storeId, storeId))
-          : isNull(userRoles.storeId),
+          : or(isNull(userRoles.storeId), isNotNull(userRoles.storeId)), // Load all roles when no storeId specified
       ),
     );
 

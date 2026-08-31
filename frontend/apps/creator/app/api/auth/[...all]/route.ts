@@ -1,4 +1,5 @@
-import { auth } from "@dbk/auth/server";
-import { toNextJsHandler } from "better-auth/next-js";
+import { NextResponse } from "next/server";
 
-export const { GET, POST } = toNextJsHandler(auth);
+/** Legacy frontend Better Auth endpoint deliberately retired. */
+export function GET() { return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 }); }
+export const POST = GET;

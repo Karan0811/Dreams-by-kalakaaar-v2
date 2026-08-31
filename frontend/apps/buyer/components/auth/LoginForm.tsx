@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginInput } from "@dbk/utils";
-import { signIn } from "@dbk/auth";
 import { Alert, Button, FormField, Input, PasswordInput } from "@dbk/ui";
 import { useState } from "react";
 
@@ -22,27 +21,17 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginInput) {
     setFormError(null);
-    const { error } = await signIn.email({ email: values.email, password: values.password });
-
-    if (error) {
-      // §4.1: a generic message that never confirms which field was wrong.
-      setFormError("That email or password doesn't look right. Please try again.");
-      return;
-    }
-
-    // Bridges this Better Auth session to the backend's own JWT auth (see
-    // `@dbk/auth`'s `access-token.ts` doc comment) — every authenticated
-    // BFF route (Cart, Orders, Wishlist, ...) depends on this having run.
-    // A bridge failure isn't treated as a login failure (the account IS
-    // signed in) but is surfaced so the person knows some features may not
-    // work until they refresh or sign in again.
+    // The backend Better Auth instance is the sole credential and session
+    // authority; this endpoint only stores its canonical tokens as httpOnly
+    // cookies for the frontend BFF.
     const bridgeResponse = await fetch("/api/session/bridge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: values.email, password: values.password }),
     });
     if (!bridgeResponse.ok) {
-      setFormError("Signed in, but some features may be unavailable until you refresh the page.");
+      setFormError("That email or password doesn't look right. Please try again.");
+      return;
     }
 
     router.push(searchParams.get("redirectTo") ?? "/account/dashboard");

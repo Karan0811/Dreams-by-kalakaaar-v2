@@ -2,24 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, MapPin, ShoppingBag } from "lucide-react";
-import { useCart, useMyAddresses, useCreateOrder } from "@dbk/api-client";
+import { useCart, useMyAddresses } from "@dbk/api-client";
 import { formatMoney } from "@dbk/utils";
-import { Button, Card, EmptyState, ErrorState, RadioGroup, RadioGroupItem, Skeleton, toast } from "@dbk/ui";
+import { Button, Card, EmptyState, ErrorState, RadioGroup, RadioGroupItem, Skeleton } from "@dbk/ui";
 
 /**
  * No payment integration this sprint (explicit brief constraint — see
- * `modules/orders/schemas.ts`'s doc comment). Placing an order here
- * creates it directly in `PENDING`, the same way the backend itself
- * works: this page is honest about that rather than simulating a payment
- * step that doesn't actually charge anything.
+ * Final payment and order placement are deliberately unavailable until a
+ * payment provider is integrated and its result is verified server-side.
  */
 export function CheckoutClient() {
-  const router = useRouter();
   const { data: cart, isLoading: cartLoading } = useCart();
   const { data: addresses, isLoading: addressesLoading, isError: addressesError, refetch } = useMyAddresses();
-  const createOrder = useCreateOrder();
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const isLoading = cartLoading || addressesLoading;
@@ -49,20 +44,6 @@ export function CheckoutClient() {
 
   const defaultAddress = addresses?.find((a) => a.isDefault) ?? addresses?.[0] ?? null;
   const activeAddressId = selectedAddressId ?? defaultAddress?.id ?? null;
-
-  async function handlePlaceOrder() {
-    if (!activeAddressId) {
-      toast.error("Please select a shipping address.");
-      return;
-    }
-    try {
-      const order = await createOrder.mutateAsync({ shippingAddressId: activeAddressId });
-      toast.success("Order placed!");
-      router.push(`/account/orders/${order.id}`);
-    } catch {
-      toast.error("Couldn't place your order. Please review your cart and try again.");
-    }
-  }
 
   return (
     <div className="grid gap-[var(--space-400)] lg:grid-cols-[1fr_320px]">
@@ -127,14 +108,15 @@ export function CheckoutClient() {
           <span>Total</span>
           <span className="tabular-nums">{formatMoney({ amountMinor: cart.subtotalAmount, currency: "INR" })}</span>
         </div>
+        <p className="mt-3 text-[13px] text-text-secondary">
+          Online payment and order placement are not available yet. Your cart is saved.
+        </p>
         <Button
           size="lg"
           className="mt-[var(--space-300)] w-full"
-          disabled={!activeAddressId}
-          isLoading={createOrder.isPending}
-          onClick={handlePlaceOrder}
+          disabled
         >
-          Place Order
+          Checkout unavailable
         </Button>
       </aside>
     </div>

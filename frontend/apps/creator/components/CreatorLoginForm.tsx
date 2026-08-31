@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginInput } from "@dbk/utils";
-import { signIn } from "@dbk/auth";
 import { Alert, Button, FormField, Input, PasswordInput } from "@dbk/ui";
 
 export function CreatorLoginForm() {
@@ -22,24 +21,15 @@ export function CreatorLoginForm() {
 
   async function onSubmit(values: LoginInput) {
     setFormError(null);
-    const { error } = await signIn.email({ email: values.email, password: values.password });
-
-    if (error) {
-      setFormError("That email or password doesn't look right. Please try again.");
-      return;
-    }
-
-    // Bridges this Better Auth session to the backend's own JWT auth (see
-    // `@dbk/auth`'s `access-token.ts` doc comment) — every authenticated
-    // BFF route in this app (Creator profile, Products, Variants, ...)
-    // depends on this having run.
+    // Authenticate directly against the canonical backend session.
     const bridgeResponse = await fetch("/api/session/bridge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: values.email, password: values.password }),
     });
     if (!bridgeResponse.ok) {
-      setFormError("Signed in, but some features may be unavailable until you refresh the page.");
+      setFormError("That email or password doesn't look right. Please try again.");
+      return;
     }
 
     router.push(searchParams.get("redirectTo") ?? "/dashboard");

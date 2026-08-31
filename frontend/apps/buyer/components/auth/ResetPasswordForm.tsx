@@ -25,7 +25,7 @@ export function ResetPasswordForm({ token, error }: { token?: string; error?: st
       return;
     }
     setState("submitting");
-    const { error: resetError } = await resetPassword({ newPassword: password, token });
+    const { error: resetError } = await resetPassword({ newPassword: password, token: token! });
     if (resetError) {
       setState("invalid");
       return;

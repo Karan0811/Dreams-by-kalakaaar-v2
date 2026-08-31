@@ -192,7 +192,26 @@ async function refreshBackendSession(): Promise<string | null> {
   }
 }
 
-/** Clears both bridge cookies — called from each app's logout flow alongside Better Auth's own `signOut`. */
+/** Revokes the canonical backend session and removes its local httpOnly cookies. */
+export async function logoutBackendSession(): Promise<void> {
+  const store = await cookies();
+  const accessToken = store.get(ACCESS_TOKEN_COOKIE)?.value;
+  const refreshToken = store.get(REFRESH_TOKEN_COOKIE)?.value;
+  try {
+    await fetch(`${backendBaseUrl()}/auth/logout`, {
+      method: "POST",
+      headers: {
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(refreshToken ? { Cookie: `${BACKEND_REFRESH_TOKEN_COOKIE}=${encodeURIComponent(refreshToken)}` } : {}),
+      },
+    });
+  } finally {
+    store.delete(ACCESS_TOKEN_COOKIE);
+    store.delete(REFRESH_TOKEN_COOKIE);
+  }
+}
+
+/** Clears local canonical-session cookies when revocation cannot be attempted. */
 export async function clearBackendSession(): Promise<void> {
   const store = await cookies();
   store.delete(ACCESS_TOKEN_COOKIE);

@@ -1,7 +1,6 @@
 export { useClientSessionStore, useSessionUser } from "./client-session-store";
 
 export {
-  authClient,
   signIn,
   signUp,
   signOut,

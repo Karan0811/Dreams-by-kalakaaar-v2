@@ -1,4 +1,4 @@
-import { NotFoundError, ValidationError } from '@/shared/errors/base-errors';
+import { NotFoundError, PaymentError, ValidationError } from '@/shared/errors/base-errors';
 
 export class OrderNotFoundError extends NotFoundError {
   constructor() {
@@ -38,5 +38,17 @@ export class CartItemStockChangedError extends ValidationError {
       undefined,
       422,
     );
+  }
+}
+
+/**
+ * Final checkout must remain unavailable until a payment provider can create
+ * and verify a payment before inventory and order records are committed.
+ */
+export class CheckoutPaymentUnavailableError extends PaymentError {
+  override readonly code = 'CHECKOUT_PAYMENT_UNAVAILABLE';
+
+  constructor() {
+    super('Order placement is temporarily unavailable while secure payment processing is being set up.');
   }
 }

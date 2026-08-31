@@ -85,7 +85,6 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
               variant="tertiary"
               size="sm"
               onClick={() => {
-                void fetch("/api/session/clear", { method: "POST" });
                 void signOut();
               }}
             >

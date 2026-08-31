@@ -10,7 +10,7 @@ export function buildRefreshTokenCookie(rawToken: string, expiresAt: Date): stri
   const attributes = [
     `${REFRESH_TOKEN_COOKIE}=${rawToken}`,
     `Expires=${expiresAt.toUTCString()}`,
-    'Path=/v1/auth',
+    'Path=/api/v1/auth',
     'HttpOnly',
     'SameSite=Strict',
   ];
@@ -26,7 +26,7 @@ export function buildClearedRefreshTokenCookie(): string {
   const attributes = [
     `${REFRESH_TOKEN_COOKIE}=`,
     'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
-    'Path=/v1/auth',
+    'Path=/api/v1/auth',
     'HttpOnly',
     'SameSite=Strict',
   ];

@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
 
 /** Same pattern as apps/buyer/middleware.ts — see there for the full
  * rationale on using Better Auth's `getSessionCookie()` helper. */
@@ -13,7 +12,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionCookie = getSessionCookie(request);
+  const sessionCookie = request.cookies.get("dbk_access_token");
 
   if (!sessionCookie) {
     const loginUrl = new URL("/login", request.url);

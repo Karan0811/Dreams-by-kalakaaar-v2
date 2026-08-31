@@ -71,7 +71,7 @@ export class ConflictError extends BaseError {
 
 /** 402 — payment-specific failures. */
 export class PaymentError extends BaseError {
-  readonly code = 'PAYMENT_ERROR';
+  readonly code: string = 'PAYMENT_ERROR';
   readonly httpStatus = 402;
 }
 

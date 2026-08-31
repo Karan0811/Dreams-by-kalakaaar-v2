@@ -1,71 +1,43 @@
 import "server-only";
-import { headers as nextHeaders } from "next/headers";
 import type { SessionUser, UserRole } from "@dbk/types";
-import { auth } from "./better-auth.config";
+import { getBackendAccessToken } from "./access-token";
 
-const KNOWN_ROLES: readonly UserRole[] = ["buyer", "creator", "admin", "moderator", "support"];
-
-/**
- * `roles` is persisted by Better Auth as a JSON-encoded string (see the
- * `user.additionalFields` comment in better-auth.config.ts — Better Auth's
- * additional-fields typing isn't threaded through `auth.api.getSession()`'s
- * static return type, so this is a narrow, explicit cast rather than an
- * `any`), so it has to be parsed defensively: malformed or missing data
- * falls back to `["buyer"]` rather than throwing or admitting garbage into
- * `SessionUser.roles`.
- */
-function parseRoles(raw: unknown): UserRole[] {
-  if (typeof raw !== "string") return ["buyer"];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return ["buyer"];
-    const roles = parsed.filter((value): value is UserRole =>
-      KNOWN_ROLES.includes(value as UserRole),
-    );
-    return roles.length > 0 ? roles : ["buyer"];
-  } catch {
-    return ["buyer"];
-  }
+function backendBaseUrl(): string {
+  const value = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!value) throw new Error("API_BASE_URL is not configured.");
+  return value.replace(/\/$/, "");
 }
 
-interface BetterAuthUserWithAppFields {
-  roles?: unknown;
-  hasCreatorProfile?: unknown;
+function toRoles(roleNames: string[]): UserRole[] {
+  const names = new Set(roleNames.map((name) => name.toLowerCase()));
+  const roles: UserRole[] = ["buyer"];
+  if ([...names].some((name) => name.includes("creator"))) roles.push("creator");
+  if (names.has("admin") || names.has("super admin")) roles.push("admin");
+  if (names.has("moderator")) roles.push("moderator");
+  if (names.has("support")) roles.push("support");
+  return roles;
 }
 
-/**
- * Resolves the current request's session, server-side, directly from the
- * Better Auth cookie. This is the *authoritative* check
- * (11-frontend-architecture.md §12.2) — every Server Component and Route
- * Handler that touches protected data calls this itself, rather than trusting
- * that `middleware.ts` already gated the request, since middleware alone must
- * never be the sole security boundary.
- */
+/** Resolves the canonical backend identity from the same bearer token used by every BFF API call. */
 export async function getServerSession(): Promise<SessionUser | null> {
-  const result = await auth.api.getSession({ headers: await nextHeaders() });
-  if (!result?.user) return null;
-
-  const { user } = result;
-  const appFields = user as typeof user & BetterAuthUserWithAppFields;
-
-  return {
-    id: user.id as SessionUser["id"],
-    email: user.email,
-    displayName: user.name ?? user.email,
-    avatarUrl: user.image ?? null,
-    roles: parseRoles(appFields.roles),
-    hasCreatorProfile: appFields.hasCreatorProfile === true,
-    emailVerified: user.emailVerified ?? false,
-  };
+  const accessToken = await getBackendAccessToken();
+  if (!accessToken) return null;
+  try {
+    const response = await fetch(`${backendBaseUrl()}/auth/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { data?: { id: string; email: string; emailVerified: boolean; roles: string[] } };
+    const user = body.data;
+    if (!user) return null;
+    const roles = toRoles(user.roles);
+    return { id: user.id as SessionUser["id"], email: user.email, displayName: user.email, avatarUrl: null,
+      roles, hasCreatorProfile: roles.includes("creator"), emailVerified: user.emailVerified };
+  } catch { return null; }
 }
 
-/** Throws-if-absent variant for Server Components/Route Handlers that are
- * only ever reached on an already-protected route (defense-in-depth re-check
- * described in §12.2), so a caller never needs a redundant null check. */
 export async function requireServerSession(): Promise<SessionUser> {
   const session = await getServerSession();
-  if (!session) {
-    throw new Error("UNAUTHENTICATED");
-  }
+  if (!session) throw new Error("UNAUTHENTICATED");
   return session;
 }
