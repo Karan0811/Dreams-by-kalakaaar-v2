@@ -78,9 +78,28 @@ export async function getPublicProductDetail(idOrSlug: string) {
   const product = await productsRepository.findPublicProductByIdOrSlug(idOrSlug);
   if (!product) throw new ProductNotFoundError();
 
-  const [enriched] = await productsRepository.enrichProductsForPublicResponse([product]);
+  const [[enriched], variants] = await Promise.all([
+    productsRepository.enrichProductsForPublicResponse([product]),
+    productsRepository.findVariantsForProduct(product.id),
+  ]);
   if (!enriched) throw new ProductNotFoundError();
-  return enriched;
+
+  // Sprint 02 Cart wiring: `@dbk/types`'s `Product.variantId` is the real
+  // purchasable unit Add to Cart needs. The buyer product page has no
+  // variant-selector UI yet (customizationFields are freeform text, not
+  // attribute pickers), so this picks one default variant to back the
+  // single "Add to Cart" button — the first in-stock ACTIVE variant, falling
+  // back to the first ACTIVE variant so a made-to-order/temporarily-out-of
+  // -stock product still surfaces a target (the Cart module's own
+  // `assertVariantAvailable` remains the real source of truth and will
+  // reject an unavailable one server-side). Left `null` only when a product
+  // genuinely has no ACTIVE variant at all.
+  const defaultVariant =
+    variants.find((v) => v.status === 'ACTIVE' && (v.quantityAvailable ?? 0) > 0) ??
+    variants.find((v) => v.status === 'ACTIVE') ??
+    null;
+
+  return { ...enriched, variantId: defaultVariant?.id ?? null };
 }
 
 export async function updateProduct(productId: string, input: UpdateProductInput) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAddToCart } from "@dbk/api-client";
+import { ApiError, useAddToCart } from "@dbk/api-client";
 import { formatMoney } from "@dbk/utils";
 import { Button, toast } from "@dbk/ui";
 import type { Product } from "@dbk/types";
@@ -32,7 +32,13 @@ export function StickyAddToCartBar({ product }: { product: Product }) {
       { variantId: product.variantId, quantity: 1 },
       {
         onSuccess: () => toast.success("Added to cart"),
-        onError: () => toast.error("Couldn't add this to your cart. Please try again."),
+        onError: (error) => {
+          if (error instanceof ApiError && error.status === 401) {
+            toast.error("Please sign in to add items to your cart.");
+            return;
+          }
+          toast.error("Couldn't add this to your cart. Please try again.");
+        },
       },
     );
   }

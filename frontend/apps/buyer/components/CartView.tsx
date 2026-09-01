@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
-import { useCart, useRemoveCartItem, useUpdateCartItem } from "@dbk/api-client";
+import { LogIn, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { ApiError, useCart, useRemoveCartItem, useUpdateCartItem } from "@dbk/api-client";
 import { formatMoney } from "@dbk/utils";
 import { Button, Skeleton, toast } from "@dbk/ui";
 import type { CartEntry } from "@dbk/types";
@@ -16,7 +16,7 @@ import type { CartEntry } from "@dbk/types";
  * per line, so the stock-limit UI never lags the true inventory.
  */
 export function CartView() {
-  const { data: cart, isLoading } = useCart();
+  const { data: cart, isLoading, error } = useCart();
   const updateItem = useUpdateCartItem();
   const removeItem = useRemoveCartItem();
 
@@ -26,6 +26,29 @@ export function CartView() {
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-24 w-full" />
         ))}
+      </div>
+    );
+  }
+
+  // `/cart` itself isn't route-protected (only `/account/*` is, per the
+  // existing middleware) so a signed-out visitor can land here directly —
+  // `useCart` then fails with a 401, not a genuinely empty cart. Treating
+  // those the same told a signed-out buyer "your cart is empty" instead of
+  // "sign in first", which is actively misleading for the required
+  // Login → Product → Add to Cart → Cart flow.
+  if (error instanceof ApiError && error.status === 401) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-[var(--radius-300)] border border-border bg-background-subtle py-[var(--space-1200)] text-center">
+        <LogIn className="size-10 text-text-secondary" aria-hidden />
+        <div>
+          <p className="text-[16px] font-medium text-text-primary">Sign in to view your cart</p>
+          <p className="mt-1 text-[14px] text-text-secondary">
+            Your cart is saved to your account once you&apos;re signed in.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/login">Sign In</Link>
+        </Button>
       </div>
     );
   }

@@ -359,8 +359,17 @@ export async function listProductsForStore(storeId: string, query: ListStoreProd
 /** Public listing: ACTIVE only, optionally filtered by category/store/search/price/stock. */
 export async function listPublicProducts(query: ListProductsQuery) {
   const scopeCondition = eq(products.status, 'ACTIVE');
+  const t0 = performance.now(); // ADDED
   const result = await runProductListQuery(scopeCondition, query);
-  return { ...result, data: await enrichProductsForPublicResponse(result.data) };
+  const t1 = performance.now(); // ADDED
+  const data = await enrichProductsForPublicResponse(result.data);
+  const t2 = performance.now(); // ADDED
+  console.log('products.repo.performance', { // ADDED
+    runProductListQueryMs: Number((t1 - t0).toFixed(2)),
+    enrichMs: Number((t2 - t1).toFixed(2)),
+    dbTotalMs: Number((t2 - t0).toFixed(2)),
+  });
+  return { ...result, data };
 }
 
 /**

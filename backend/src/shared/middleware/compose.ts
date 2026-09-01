@@ -46,11 +46,13 @@ export function withRouteHandler(handler: RouteHandler) {
     const params = routeContext?.params ? await routeContext.params : {};
 
     logger.info('request.start', {
-      correlationId,
-      requestId,
-      method: request.method,
-      path: new URL(request.url).pathname,
-    });
+  correlationId,
+  requestId,
+  method: request.method,
+  path: new URL(request.url).pathname,
+  query: new URL(request.url).search, // ADDED — proves both requests share sort=newest
+  isPrefetch: request.headers.get('next-router-prefetch') ?? undefined, // ADDED — proves prefetch origin
+});
 
     try {
       const response = await handler({ request, correlationId, requestId, params });

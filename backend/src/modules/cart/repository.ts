@@ -1,6 +1,11 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '@/shared/db/client';
 import { cartItems, productVariants, products, inventory } from '@/shared/db/schema';
+
+// Same convention as `products/repository.ts`'s `notDeleted` /
+// `wishlist/repository.ts`'s fix: a soft-deleted product must disappear
+// from everywhere it's read from, cart included.
+const notDeleted = isNull(products.deletedAt);
 
 export async function listCartItems(userId: string) {
   return db
@@ -30,7 +35,10 @@ export async function listCartItems(userId: string) {
     .innerJoin(productVariants, eq(productVariants.id, cartItems.variantId))
     .innerJoin(products, eq(products.id, productVariants.productId))
     .leftJoin(inventory, eq(inventory.variantId, productVariants.id))
-    .where(eq(cartItems.userId, userId));
+    // FIX: previously joined without excluding soft-deleted products, so a
+    // deleted product's variant could sit in a buyer's cart forever instead
+    // of disappearing like it does everywhere else it's read from.
+    .where(and(eq(cartItems.userId, userId), notDeleted));
 }
 
 export async function findCartItem(userId: string, variantId: string) {
@@ -58,8 +66,13 @@ export async function findVariantWithInventory(variantId: string) {
       quantityAvailable: inventory.quantityAvailable,
     })
     .from(productVariants)
+    .innerJoin(products, eq(products.id, productVariants.productId))
     .leftJoin(inventory, eq(inventory.variantId, productVariants.id))
-    .where(eq(productVariants.id, variantId))
+    // FIX: previously didn't join `products` at all, so `assertVariantAvailable`
+    // (service.ts) could let a buyer add/update a quantity against a variant
+    // whose parent product was soft-deleted — the same gap fixed for reads
+    // above, but on the write path this time.
+    .where(and(eq(productVariants.id, variantId), notDeleted))
     .limit(1);
   return row ?? null;
 }
