@@ -42,8 +42,12 @@ export class CartItemStockChangedError extends ValidationError {
 }
 
 /**
- * Final checkout must remain unavailable until a payment provider can create
- * and verify a payment before inventory and order records are committed.
+ * Reserved for the real payment integration (Razorpay, Sprint 03+): once a
+ * payment step exists, an order will need to stay blocked here until that
+ * payment is created and verified. Not thrown anywhere today — Sprint 02
+ * creates Orders directly in `PENDING` with no payment step at all (see
+ * `shared/db/schema/orders.ts`'s doc comment), which `createOrder`
+ * (service.ts) does unconditionally rather than gating on this error.
  */
 export class CheckoutPaymentUnavailableError extends PaymentError {
   override readonly code = 'CHECKOUT_PAYMENT_UNAVAILABLE';

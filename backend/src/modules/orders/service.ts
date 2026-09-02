@@ -1,20 +1,28 @@
 import * as ordersRepository from './repository';
-import {
-  CheckoutPaymentUnavailableError,
-  OrderNotFoundError,
-  OrderNotCancellableError,
-  InvalidOrderStatusTransitionError,
-} from './errors';
+import { OrderNotFoundError, OrderNotCancellableError, InvalidOrderStatusTransitionError } from './errors';
 import * as notificationsService from '@/modules/notifications/service';
 import type { ListMyOrdersQuery } from './schemas';
 
+/**
+ * Sprint 02 checkout — no payment integration yet (explicit brief
+ * constraint, documented on `shared/db/schema/orders.ts`'s `orders` table):
+ * an Order is created directly in `PENDING` with no payment/authorization
+ * step. `checkoutFromCart` (repository.ts) already implements the full,
+ * atomic, server-validated flow — re-reads the cart, re-validates stock,
+ * fetches authoritative prices from `productVariants`, computes totals,
+ * and clears the cart, all inside one transaction. This was previously
+ * gated behind an unconditional `CheckoutPaymentUnavailableError` stub;
+ * that gate is removed here now that "PENDING, no payment" is the actual
+ * target behavior for this sprint, not a future one.
+ *
+ * No "order placed" notification is sent here: `notificationTypeEnum`
+ * (`shared/db/schema/notifications.ts`) has no matching value today, and
+ * adding one is an out-of-scope schema change for this phase — the order
+ * confirmation itself is the response returned to the caller (and the
+ * page it's rendered on), not a notification.
+ */
 export async function createOrder(userId: string, shippingAddressId: string) {
-  // Never create an order or decrement stock without a verified payment.
-  // Keeping the endpoint's explicit 402 response lets clients show an honest
-  // unavailable state rather than implying that an unpaid order was accepted.
-  void userId;
-  void shippingAddressId;
-  throw new CheckoutPaymentUnavailableError();
+  return ordersRepository.checkoutFromCart(userId, shippingAddressId);
 }
 
 export async function listMyOrders(userId: string, query: ListMyOrdersQuery) {

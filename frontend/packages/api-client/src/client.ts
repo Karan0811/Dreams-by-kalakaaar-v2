@@ -32,7 +32,20 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   const correlationId = crypto.randomUUID();
   const headers = new Headers(options.headers);
   headers.set("Content-Type", "application/json");
-  headers.set("X-Correlation-Id", correlationId);
+  // A random header becomes part of Next's fetch cache/memoization key. The
+  // old behavior therefore disabled the `next.revalidate` cache on every
+  // catalog request and also prevented generateMetadata/page de-duplication.
+  // Cacheable GETs still receive a request id from the upstream API when the
+  // header is absent; mutations and no-store requests retain per-request
+  // correlation.
+  const isCacheableGet =
+    (options.method === undefined || options.method.toUpperCase() === "GET") &&
+    options.next?.revalidate !== undefined &&
+    options.next.revalidate !== false &&
+    options.cache !== "no-store";
+  if (!isCacheableGet) {
+    headers.set("X-Correlation-Id", correlationId);
+  }
   if (options.idempotencyKey) {
     headers.set("Idempotency-Key", options.idempotencyKey);
   }

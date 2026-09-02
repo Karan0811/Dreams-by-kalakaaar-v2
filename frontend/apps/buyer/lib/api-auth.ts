@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
-import { getServerSession, getBackendAccessToken } from "@dbk/auth/server";
+import { getBackendAccessToken } from "@dbk/auth/server";
 
 /**
- * Every buyer-account BFF route (Cart, Wishlist, Addresses, Orders,
- * Reviews, Notifications) needs the same two checks: a valid session and a
- * backend-bridged access token. Mirrors `apps/creator/lib/api-auth.ts`'s
- * `requireCreatorAccessToken` — same shape, minus the `creator` role
- * check, since any authenticated user is a buyer by default (no separate
- * buyer role exists in RBAC).
+ * The backend access token is the authoritative session for BFF requests:
+ * the upstream backend verifies its signature and claims on every request.
+ * Do not call `getServerSession()` here. That function intentionally calls
+ * the backend's `/auth/me` endpoint to build a display profile, but doing so
+ * before every BFF request adds a redundant rate-limit request, user query,
+ * and RBAC query to every cart/wishlist/order operation.
  */
 export async function requireAccessToken(): Promise<
   { accessToken: string } | { errorResponse: NextResponse }
 > {
-  const session = await getServerSession();
-  if (!session) {
+  const accessToken = await getBackendAccessToken();
+  if (!accessToken) {
     return {
       errorResponse: NextResponse.json(
         {
@@ -24,22 +24,6 @@ export async function requireAccessToken(): Promise<
           },
         },
         { status: 401 },
-      ),
-    };
-  }
-
-  const accessToken = await getBackendAccessToken();
-  if (!accessToken) {
-    return {
-      errorResponse: NextResponse.json(
-        {
-          error: {
-            code: "AUTH_BRIDGE_NOT_CONFIGURED",
-            message: "This session isn't bridged to the backend's API yet.",
-            correlationId: crypto.randomUUID(),
-          },
-        },
-        { status: 501 },
       ),
     };
   }

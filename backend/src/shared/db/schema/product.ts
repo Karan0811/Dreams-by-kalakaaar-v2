@@ -106,6 +106,7 @@ export const productVariants = pgTable(
   },
   (table) => [
     index('product_variants_product_id_idx').on(table.productId),
+    index('product_variants_product_price_idx').on(table.productId, table.priceAmount),
     uniqueIndex('product_variants_sku_unique_idx').on(table.skuReference),
   ],
 );
@@ -128,6 +129,11 @@ export const productMedia = pgTable(
   },
   (table) => [
     index('product_media_product_display_order_idx').on(table.productId, table.displayOrder),
+    index('product_media_product_primary_order_idx').on(
+      table.productId,
+      table.isPrimary,
+      table.displayOrder,
+    ),
   ],
 );
 

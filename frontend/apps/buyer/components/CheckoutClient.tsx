@@ -1,21 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MapPin, ShoppingBag } from "lucide-react";
-import { useCart, useMyAddresses } from "@dbk/api-client";
+import { ApiError, useCart, useCreateOrder, useMyAddresses } from "@dbk/api-client";
 import { formatMoney } from "@dbk/utils";
-import { Button, Card, EmptyState, ErrorState, RadioGroup, RadioGroupItem, Skeleton } from "@dbk/ui";
+import { Button, Card, EmptyState, ErrorState, RadioGroup, RadioGroupItem, Skeleton, toast } from "@dbk/ui";
 
 /**
  * No payment integration this sprint (explicit brief constraint — see
- * Final payment and order placement are deliberately unavailable until a
- * payment provider is integrated and its result is verified server-side.
+ * `shared/db/schema/orders.ts`'s doc comment). Placing an order here
+ * creates it directly in `PENDING` status; `POST /users/me/orders` (and
+ * `checkoutFromCart` beneath it) re-validates the cart, re-fetches
+ * authoritative prices, and computes the total entirely server-side —
+ * nothing shown on this screen is trusted as-is when the order is placed.
  */
 export function CheckoutClient() {
+  const router = useRouter();
   const { data: cart, isLoading: cartLoading } = useCart();
   const { data: addresses, isLoading: addressesLoading, isError: addressesError, refetch } = useMyAddresses();
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const createOrder = useCreateOrder();
 
   const isLoading = cartLoading || addressesLoading;
 
@@ -44,6 +50,35 @@ export function CheckoutClient() {
 
   const defaultAddress = addresses?.find((a) => a.isDefault) ?? addresses?.[0] ?? null;
   const activeAddressId = selectedAddressId ?? defaultAddress?.id ?? null;
+
+  function handlePlaceOrder() {
+    if (!activeAddressId) {
+      toast.error("Please choose a shipping address first.");
+      return;
+    }
+
+    createOrder.mutate(
+      { shippingAddressId: activeAddressId },
+      {
+        onSuccess: (order) => {
+          toast.success("Order placed!");
+          router.push(`/account/orders/${order.id}`);
+        },
+        onError: (error) => {
+          // The cart/pricing/stock re-validation that produces these lives
+          // entirely server-side in `checkoutFromCart` — these messages
+          // (empty cart, stock/availability changed since this page
+          // loaded, shipping address no longer exists) are the server's
+          // authoritative answer, not a client-side guess.
+          if (error instanceof ApiError && (error.code === 'VALIDATION_ERROR' || error.code === 'NOT_FOUND')) {
+            toast.error(error.message);
+            return;
+          }
+          toast.error("Couldn't place your order. Please try again.");
+        },
+      },
+    );
+  }
 
   return (
     <div className="grid gap-[var(--space-400)] lg:grid-cols-[1fr_320px]">
@@ -109,14 +144,16 @@ export function CheckoutClient() {
           <span className="tabular-nums">{formatMoney({ amountMinor: cart.subtotalAmount, currency: "INR" })}</span>
         </div>
         <p className="mt-3 text-[13px] text-text-secondary">
-          Online payment and order placement are not available yet. Your cart is saved.
+          Cash/pay-on-delivery only for now — online payment isn&apos;t available yet.
         </p>
         <Button
           size="lg"
           className="mt-[var(--space-300)] w-full"
-          disabled
+          disabled={!activeAddressId || !addresses || addresses.length === 0}
+          isLoading={createOrder.isPending}
+          onClick={handlePlaceOrder}
         >
-          Checkout unavailable
+          Place Order
         </Button>
       </aside>
     </div>

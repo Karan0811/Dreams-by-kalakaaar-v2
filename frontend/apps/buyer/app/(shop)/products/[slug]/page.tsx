@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { Star } from "lucide-react";
 import { fetchProductBySlug } from "@dbk/api-client/server";
 import { formatMoney } from "@dbk/utils";
@@ -15,9 +16,15 @@ interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Metadata and the page body are separate React Server Component consumers.
+// Keep one request per slug in a render pass even if a framework version does
+// not memoize the underlying fetch (the old random correlation header also
+// made those fetches different cache keys).
+const getProduct = cache((slug: string) => fetchProductBySlug(slug));
+
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = await fetchProductBySlug(slug).catch(() => null);
+  const product = await getProduct(slug).catch(() => null);
   if (!product) return {};
   return {
     title: product.title,
@@ -27,7 +34,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product = await fetchProductBySlug(slug).catch(() => null);
+  const product = await getProduct(slug).catch(() => null);
   if (!product) notFound();
 
   return (

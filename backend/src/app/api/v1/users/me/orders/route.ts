@@ -17,8 +17,11 @@ export const GET = withRouteHandler(async ({ request, correlationId }) => {
 });
 
 /**
- * Reserved checkout endpoint. Until payment creation and verification are
- * implemented, it returns a typed 402 and makes no database changes.
+ * Places an order from the authenticated buyer's current cart. No payment
+ * step this sprint (see `shared/db/schema/orders.ts`) — the order is
+ * created directly in `PENDING`. The only client input is
+ * `shippingAddressId`; `createOrder` re-validates the cart, prices every
+ * line from the database, and computes the total entirely server-side.
  */
 export const POST = withRouteHandler(async ({ request, correlationId }) => {
   const auth = await authenticate(request);

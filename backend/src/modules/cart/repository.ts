@@ -41,11 +41,27 @@ export async function listCartItems(userId: string) {
     .where(and(eq(cartItems.userId, userId), notDeleted));
 }
 
-export async function findCartItem(userId: string, variantId: string) {
+/**
+ * Loads the cart line and the purchasable variant in one round trip. The
+ * previous add flow did a cart lookup and then a second variant/inventory
+ * lookup before every write.
+ */
+export async function findCartItemWithVariantAndInventory(userId: string, variantId: string) {
   const [row] = await db
-    .select()
-    .from(cartItems)
-    .where(and(eq(cartItems.userId, userId), eq(cartItems.variantId, variantId)))
+    .select({
+      cartItem: cartItems,
+      variant: productVariants,
+      product: products,
+      quantityAvailable: inventory.quantityAvailable,
+    })
+    .from(productVariants)
+    .innerJoin(products, eq(products.id, productVariants.productId))
+    .leftJoin(inventory, eq(inventory.variantId, productVariants.id))
+    .leftJoin(
+      cartItems,
+      and(eq(cartItems.userId, userId), eq(cartItems.variantId, productVariants.id)),
+    )
+    .where(and(eq(productVariants.id, variantId), notDeleted))
     .limit(1);
   return row ?? null;
 }

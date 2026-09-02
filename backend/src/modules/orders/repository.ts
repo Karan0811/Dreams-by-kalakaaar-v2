@@ -39,6 +39,29 @@ export async function checkoutFromCart(userId: string, addressId: string) {
     const address = await findAddressForOrderTx(tx, userId, addressId);
     if (!address) throw new ShippingAddressNotFoundError();
 
+    // FIX (duplicate-submission race): without a lock, two concurrent
+    // checkout requests for the same user's cart (double-click,
+    // double-submit, a client retry racing the original) can both read the
+    // same non-empty cart before either commits, and both create an Order
+    // + decrement inventory from it. A plain, single-table `FOR UPDATE`
+    // lock on this user's `cartItems` rows makes the second request's
+    // transaction wait for the first to finish; once the first commits
+    // (deleting the cart), the second's own line-item query below simply
+    // finds no rows and correctly falls through to `EmptyCartError`
+    // instead of creating a duplicate Order. No new table/column, no
+    // idempotency-key middleware — a minimal fix within the existing
+    // single-transaction design. Deliberately a separate, single-table
+    // query (not `.for('update')` on the joined `lines` query below) —
+    // `inventory` is LEFT JOINed there, and Postgres rejects `FOR UPDATE`
+    // on the nullable side of an outer join.
+    const lockedCartItems = await tx
+      .select({ id: cartItems.id })
+      .from(cartItems)
+      .where(eq(cartItems.userId, userId))
+      .for('update');
+
+    if (lockedCartItems.length === 0) throw new EmptyCartError();
+
     const lines = await tx
       .select({
         variantId: cartItems.variantId,
@@ -49,6 +72,7 @@ export async function checkoutFromCart(userId: string, addressId: string) {
         attributes: productVariants.attributes,
         productId: products.id,
         productTitle: products.title,
+        productDeletedAt: products.deletedAt,
         storeId: products.storeId,
         quantityAvailable: inventory.quantityAvailable,
       })
@@ -62,7 +86,11 @@ export async function checkoutFromCart(userId: string, addressId: string) {
 
     for (const line of lines) {
       const available = line.quantityAvailable ?? 0;
-      if (line.variantStatus !== 'ACTIVE' || line.quantity > available) {
+      // A soft-deleted product is unavailable exactly like an inactive
+      // variant or insufficient stock — same rejection, same message
+      // shape, so the buyer is told to revisit their cart rather than
+      // having the line silently dropped and the total quietly change.
+      if (line.productDeletedAt !== null || line.variantStatus !== 'ACTIVE' || line.quantity > available) {
         throw new CartItemStockChangedError(line.productTitle, available);
       }
     }

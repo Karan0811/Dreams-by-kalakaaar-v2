@@ -2,8 +2,8 @@
 
 Phase-by-phase manual test checklist for the Buyer MVP flows. This document
 did not exist before Phase 1 (Cart) — it is created here per the Sprint 02
-audit workflow and will grow with each subsequent phase (Orders, Wishlist
-UI, Addresses UI, Checkout, ...).
+audit workflow and will grow with each subsequent phase (Wishlist UI,
+Addresses UI, and others still to come).
 
 Run this against a real environment: a live Postgres database (migrated +
 seeded), a running `backend` instance, and a running `apps/buyer` instance.
@@ -133,5 +133,128 @@ Flow under test: **Login → Product → Add to Cart → Cart → Quantity Updat
 
 ---
 
-*Sections for Orders, Wishlist (UI), Addresses (UI), Checkout, and other
-deferred flows will be added here as those phases are completed.*
+## Phase 2 — Checkout + Order Creation
+
+Flow under test: **Buyer → Cart → Checkout → Create Order → Order Confirmation.**
+
+### Automated vs. manual coverage — read this first
+
+`backend/src/modules/orders/__tests__/checkout-safety.test.ts` covers the
+Service Layer's wiring (`createOrder` delegates to `checkoutFromCart` with
+the right arguments, returns its result unmodified, and propagates its
+errors) with `checkoutFromCart` itself mocked out — it does **not** exercise
+real SQL. The actual re-validation logic (stock checks, deleted-product
+rejection, price/total computation, the empty-cart guard, the
+duplicate-submission row lock) lives in `checkoutFromCart`
+(`repository.ts`) and needs a **live Postgres database** to verify for
+real — no automated test in this codebase (for any module) runs against a
+live DB. Every item below needs to be run manually against a real
+environment before this phase can be considered verified.
+
+### Happy Path
+
+**Full checkout flow**
+- Purpose: confirm the entire buyer flow from cart to order confirmation works end-to-end.
+- Steps: Log in. Add 1–2 products to cart. Open `/cart`, confirm quantities/total. Click through to `/checkout`. Confirm the order summary matches the cart. Select (or add) a shipping address. Click "Place Order".
+- Expected Result: success toast "Order placed!"; redirected to `/account/orders/{orderId}`; that page shows status "Pending", the correct items, quantities, unit prices, line totals, and shipping address; the cart is now empty.
+- Pass/Fail: [ ]
+
+**Order appears in order history**
+- Purpose: confirm a placed order shows up in the buyer's order list.
+- Steps: After placing an order, navigate to `/account/orders`.
+- Expected Result: the new order appears at the top (most recent first) with status "Pending" and the correct total.
+- Pass/Fail: [ ]
+
+**Order items match cart exactly**
+- Purpose: confirm quantities and prices on the order match what was in the cart at submit time.
+- Steps: Add 2 different products with different quantities, check out, compare the order detail page line-by-line against what the cart showed.
+- Expected Result: same products, same quantities, same unit prices, same computed total (`sum(unitPriceAmount × quantity)` for both).
+- Pass/Fail: [ ]
+
+### Validation
+
+**Empty cart cannot check out**
+- Purpose: confirm an empty cart can't produce an order.
+- Steps: With an empty cart, navigate directly to `/checkout`.
+- Expected Result: "Your cart is empty" empty state with a "Browse Products" CTA — no "Place Order" button is ever shown. (Separately: a direct `POST /v1/users/me/orders` call with an empty cart returns `422` / `VALIDATION_ERROR`.)
+- Pass/Fail: [ ]
+
+**No saved address**
+- Purpose: confirm checkout can't proceed without a shipping address.
+- Steps: As a buyer with no saved addresses, add items to cart and go to `/checkout`.
+- Expected Result: "You don't have any saved addresses yet." with an "Add an address" link; "Place Order" is disabled until an address exists and is selected.
+- Pass/Fail: [ ]
+
+**Product goes out of stock after cart, before checkout**
+- Purpose: confirm the server re-checks stock at order-creation time, not just at add-to-cart time.
+- Steps: Add a product to cart. From another session/admin, reduce that variant's stock below the cart quantity (or set it out of stock). Return to `/checkout` and click "Place Order".
+- Expected Result: order is rejected with a clear "no longer has enough stock" message; no order or order items are created; cart is untouched (item remains for the buyer to adjust).
+- Pass/Fail: [ ]
+
+**Product deleted after cart, before checkout**
+- Purpose: confirm a soft-deleted product blocks checkout instead of silently vanishing from the total.
+- Steps: Add a product to cart. Soft-delete that product from the creator side. Return to `/checkout` and click "Place Order".
+- Expected Result: order is rejected (same "no longer available" class of message as the stock case above); no order is created with a missing/lower total than expected.
+- Pass/Fail: [ ]
+
+### Security / Tampering
+
+Most of the scenarios below are prevented **by the shape of the API itself**
+— `POST /v1/users/me/orders` accepts only `{ shippingAddressId }`; there is
+no price, total, buyer ID, or product/cart ID field for a client to send in
+the first place, and the authenticated `userId` always comes from the
+verified access token, never the request body. Confirm this holds for real
+by trying the raw requests below (e.g. via curl/Postman) against a running
+backend, not just the buyer UI:
+
+**Price/total tampering**
+- Steps: `POST /v1/users/me/orders` with a body like `{ "shippingAddressId": "<valid-id>", "totalAmount": 1, "unitPriceAmount": 1 }`.
+- Expected Result: the extra fields are silently ignored (Zod strips unknown keys); the created order's total reflects real database prices, not `1`.
+- Pass/Fail: [ ]
+
+**Buyer ID tampering**
+- Steps: `POST /v1/users/me/orders` with `{ "shippingAddressId": "<valid-id>", "userId": "<someone-elses-id>" }` using Buyer A's own access token.
+- Expected Result: the order is created for Buyer A (the token's subject), never for the `userId` in the body.
+- Pass/Fail: [ ]
+
+**Another user's shipping address ID**
+- Steps: As Buyer A, note Buyer B's `shippingAddressId` (or any UUID not owned by A). `POST /v1/users/me/orders` with that ID using Buyer A's token.
+- Expected Result: `404 NOT_FOUND` ("Shipping address not found") — never a 500, and never an order created against another buyer's address.
+- Pass/Fail: [ ]
+
+**Another user's order ID**
+- Steps: As Buyer A, place an order and note its ID. Log in as Buyer B and call `GET /v1/users/me/orders/{Buyer A's orderId}` and `POST /v1/users/me/orders/{Buyer A's orderId}/cancel`.
+- Expected Result: both return `404 NOT_FOUND`; Buyer A's order is untouched.
+- Pass/Fail: [ ]
+
+**Quantity 0 / negative / extremely large**
+- Steps: These can't be sent at order-creation time (no quantity field exists there) — instead try them against the Cart endpoints: `POST /v1/users/me/cart/items` and `PATCH /v1/users/me/cart/{cartItemId}` with `quantity: 0`, `quantity: -5`, and `quantity: 999999`.
+- Expected Result: all three are rejected with `422` by the Cart module's own schema (`min(1).max(99)`) before ever reaching an order; a quantity within range but exceeding real stock is separately rejected by checkout's own stock check.
+- Pass/Fail: [ ]
+
+**Create an order with an empty cart (API-level)**
+- Steps: With a genuinely empty cart, `POST /v1/users/me/orders` with a valid `shippingAddressId`.
+- Expected Result: `422 VALIDATION_ERROR`, "Your cart is empty."
+- Pass/Fail: [ ]
+
+**Cart modified between checkout display and order creation**
+- Steps: Open `/checkout` in one tab (loads and displays the current cart). In another tab/session, remove or change quantity of an item in that same cart. Back in the first tab, click "Place Order" without refreshing.
+- Expected Result: the order reflects the cart's state **at submit time** (from the second tab's changes), not what was displayed when the first tab loaded — confirms the server re-reads the cart rather than trusting anything the client sent.
+- Pass/Fail: [ ]
+
+**Duplicate submission (double-click / concurrent retry)**
+- Purpose: confirm a double-click (or a client retrying a timed-out request) can't create two orders from the same cart.
+- Steps: Click "Place Order" twice in rapid succession (or fire two concurrent `POST /v1/users/me/orders` requests with the same body/token at the same time).
+- Expected Result: exactly one order is created; the second request either fails with "Your cart is empty" (if it lands after the first commits) or is blocked/serialized by the database lock until the first completes. Never two orders from one cart.
+- Pass/Fail: [ ]
+
+**Unauthenticated order creation**
+- Steps: `POST /v1/users/me/orders` with no `Authorization` header (or an invalid/expired one).
+- Expected Result: `401 AUTHENTICATION_ERROR`; no order created.
+- Pass/Fail: [ ]
+
+---
+
+*Sections for Wishlist (UI), Addresses (UI), and other deferred flows will
+be added here as those phases are completed.*
+
