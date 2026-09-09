@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AlertCircle, MessageCircleWarning, PackageOpen, Sparkles } from "lucide-react";
 import { useCreatorPendingActions, useCreatorPerformance } from "@dbk/api-client";
 import { formatMoney } from "@dbk/utils";
-import { AnalyticsCard, Card, Skeleton } from "@dbk/ui";
+import { AnalyticsCard, Card, ErrorState, Skeleton } from "@dbk/ui";
 
 const pendingConfig = [
   { key: "newOrders" as const, label: "New orders", icon: PackageOpen, href: "/dashboard/orders" },
@@ -14,8 +14,8 @@ const pendingConfig = [
 ];
 
 export function DashboardOverview() {
-  const { data: pendingActions, isLoading: pendingLoading } = useCreatorPendingActions();
-  const { data: performance, isLoading: performanceLoading } = useCreatorPerformance("last_30_days");
+  const { data: pendingActions, isLoading: pendingLoading, isError: pendingIsError, refetch: refetchPending } = useCreatorPendingActions();
+  const { data: performance, isLoading: performanceLoading, isError: performanceIsError, refetch: refetchPerformance } = useCreatorPerformance("last_30_days");
 
   const hasAnyPendingAction =
     pendingActions && Object.values(pendingActions).some((count) => count > 0);
@@ -32,6 +32,14 @@ export function DashboardOverview() {
               <Skeleton key={i} className="h-20 w-full" />
             ))}
           </div>
+        ) : pendingIsError ? (
+          // BUG FIX (Phase 3): this previously fell through to the
+          // "You're all caught up" empty state on a fetch failure (network
+          // error, or the backend endpoint being unavailable), telling a
+          // creator with real pending work that they had none. isError now
+          // gets its own state, matching the ErrorState + refetch pattern
+          // already used elsewhere (e.g. NotificationsClient.tsx).
+          <ErrorState description="We couldn't load your pending actions." onRetry={() => refetchPending()} />
         ) : hasAnyPendingAction ? (
           <div className="grid grid-cols-2 gap-[var(--space-200)] lg:grid-cols-4">
             {pendingConfig.map(({ key, label, icon: Icon, href }) => {
@@ -66,6 +74,10 @@ export function DashboardOverview() {
               <Skeleton key={i} className="h-24 w-full" />
             ))}
           </div>
+        ) : performanceIsError ? (
+          // Same fix as above: don't tell a creator "no sales data yet"
+          // when the real story is that the request failed.
+          <ErrorState description="We couldn't load your performance data." onRetry={() => refetchPerformance()} />
         ) : performance ? (
           <div className="grid grid-cols-2 gap-[var(--space-200)] lg:grid-cols-4">
             <AnalyticsCard label="Revenue" value={formatMoney(performance.revenue)} />

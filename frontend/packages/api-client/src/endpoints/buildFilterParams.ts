@@ -26,6 +26,7 @@ const FRONTEND_TO_BACKEND_SORT = {
 export function buildFilterParams(params: ProductListParams): URLSearchParams {
   const search = new URLSearchParams();
 
+  if (params.limit !== undefined) search.set("limit", String(params.limit));
   if (params.q) search.set("q", params.q);
   if (params.categoryId) search.set("categoryId", params.categoryId);
   if (params.sort) search.set("sort", FRONTEND_TO_BACKEND_SORT[params.sort]);

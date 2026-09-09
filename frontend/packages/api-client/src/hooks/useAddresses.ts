@@ -17,7 +17,11 @@ export function useCreateAddress() {
   return useMutation({
     mutationFn: (input: CreateUserAddressPayload) =>
       browserFetch<UserAddress>("/api/addresses", { method: "POST", body: input }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: addressKeys.list() }),
+    onSuccess: (address) => {
+      queryClient.setQueryData<UserAddress[]>(addressKeys.list(), (current) =>
+        current ? [...current, address] : current,
+      );
+    },
   });
 }
 
@@ -26,7 +30,11 @@ export function useUpdateAddress() {
   return useMutation({
     mutationFn: ({ addressId, ...input }: UpdateUserAddressPayload & { addressId: string }) =>
       browserFetch<UserAddress>(`/api/addresses/${addressId}`, { method: "PATCH", body: input }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: addressKeys.list() }),
+    onSuccess: (address) => {
+      queryClient.setQueryData<UserAddress[]>(addressKeys.list(), (current) =>
+        current?.map((item) => (item.id === address.id ? address : item)),
+      );
+    },
   });
 }
 
@@ -35,6 +43,10 @@ export function useDeleteAddress() {
   return useMutation({
     mutationFn: (addressId: string) =>
       browserFetch<void>(`/api/addresses/${addressId}`, { method: "DELETE" }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: addressKeys.list() }),
+    onSuccess: (_, addressId) => {
+      queryClient.setQueryData<UserAddress[]>(addressKeys.list(), (current) =>
+        current?.filter((item) => item.id !== addressId),
+      );
+    },
   });
 }

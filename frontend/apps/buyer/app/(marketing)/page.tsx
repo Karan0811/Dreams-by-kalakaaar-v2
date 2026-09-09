@@ -58,7 +58,7 @@ const categories = [
  * Collections.
  */
 export default async function HomePage() {
-  const featured = await fetchProductList({ sort: "newest" }).catch(() => null);
+  const featured = await fetchProductList({ sort: "newest", limit: 8 }).catch(() => null);
 
   return (
     <div>

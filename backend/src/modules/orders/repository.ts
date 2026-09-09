@@ -179,12 +179,17 @@ export async function findOrderById(orderId: string) {
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) return null;
 
-  const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
-  const history = await db
-    .select()
-    .from(orderStatusHistory)
-    .where(eq(orderStatusHistory.orderId, orderId))
-    .orderBy(orderStatusHistory.createdAt);
+  // These child collections are independent once the parent exists. Running
+  // them together removes one database round-trip from every order detail
+  // request without changing the response shape.
+  const [items, history] = await Promise.all([
+    db.select().from(orderItems).where(eq(orderItems.orderId, orderId)),
+    db
+      .select()
+      .from(orderStatusHistory)
+      .where(eq(orderStatusHistory.orderId, orderId))
+      .orderBy(orderStatusHistory.createdAt),
+  ]);
 
   return { ...order, items, statusHistory: history };
 }

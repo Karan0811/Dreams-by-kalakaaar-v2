@@ -91,11 +91,25 @@ ALTER TABLE "password_resets" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "devices" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "better_auth_verifications" ENABLE ROW LEVEL SECURITY;
 
--- Legacy Better Auth tables (frontend's own schema) — not touched otherwise
-ALTER TABLE "user" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "session" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "account" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "verification" ENABLE ROW LEVEL SECURITY;
+-- Legacy Better Auth tables (frontend's own schema) — not touched otherwise.
+-- They are optional: this repository's current migrations use the plural
+-- backend-owned tables above, so a clean install does not have these legacy
+-- relations. Guard them instead of making the whole security migration fail.
+DO $$
+BEGIN
+  IF to_regclass('public.user') IS NOT NULL THEN
+    ALTER TABLE "user" ENABLE ROW LEVEL SECURITY;
+  END IF;
+  IF to_regclass('public.session') IS NOT NULL THEN
+    ALTER TABLE "session" ENABLE ROW LEVEL SECURITY;
+  END IF;
+  IF to_regclass('public.account') IS NOT NULL THEN
+    ALTER TABLE "account" ENABLE ROW LEVEL SECURITY;
+  END IF;
+  IF to_regclass('public.verification') IS NOT NULL THEN
+    ALTER TABLE "verification" ENABLE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
 -- Authorization (roles/permissions)
 ALTER TABLE "roles" ENABLE ROW LEVEL SECURITY;

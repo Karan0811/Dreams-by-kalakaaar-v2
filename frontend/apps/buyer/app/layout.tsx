@@ -1,21 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
 import { QueryProvider } from "@dbk/api-client";
 import { Toaster } from "@dbk/ui";
+// FIX (Phase 3 — Google Fonts build/dev issue): next/font/google fetches
+// Inter/Fraunces from fonts.googleapis.com at build AND dev-server compile
+// time. In a network-restricted environment (this sandbox; also plausibly
+// some CI/self-hosted runners) that fetch fails, and `next build` fails
+// outright (confirmed in the Phase 1/2 audit), while `next dev` retries
+// 3x with backoff before falling back — measured at ~12–14s added to the
+// first compile of every route that imports this layout. Self-hosting via
+// @fontsource (npm package, bundled at build time, zero runtime/build-time
+// network calls) removes the dependency entirely. This also happens to
+// exactly match the family names @dbk/config/tailwind/tokens.css already
+// declares (`--font-family-sans: "Inter", ...`, `--font-family-serif:
+// "Fraunces", ...`), so no token/Tailwind config change is needed — the
+// self-hosted @font-face rules below satisfy that existing contract
+// directly, replacing next/font/google's `.variable` override of the same
+// two custom properties.
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/fraunces/400.css";
+import "@fontsource/fraunces/500.css";
+import "@fontsource/fraunces/600.css";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-family-sans",
-  display: "swap",
-});
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-family-serif",
-  display: "swap",
-  weight: ["400", "500", "600"],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -35,7 +43,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
+    <html lang="en">
       <body className="min-h-dvh font-sans antialiased">
         <a
           href="#main-content"

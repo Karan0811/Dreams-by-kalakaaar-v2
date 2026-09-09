@@ -19,6 +19,8 @@ export type ProductListResponse = PaginatedResponse<ProductSummary>;
  * field below maps 1:1 to a query param the backend actually accepts today
  * (modules/products/schemas.ts's listProductsQuerySchema). */
 export interface ProductListParams {
+  /** Maximum number of products to return. Keep server-rendered sections small. */
+  limit?: number;
   categorySlug?: string;
   /** A raw category UUID, already in hand (e.g. a product detail response's
    * `category.id`) — unlike categorySlug above, this is forwarded as-is by

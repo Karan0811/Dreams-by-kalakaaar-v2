@@ -9,7 +9,10 @@ import { ProductCard } from "@dbk/ui";
  * newest first, excluding the current product, capped at 4.
  */
 export async function RelatedProducts({ categoryId, excludeProductId }: { categoryId: string; excludeProductId: string }) {
-  const result = await fetchProductList({ categoryId, sort: "newest" }).catch(() => null);
+  // Fetch only what can be rendered plus the current product that may need
+  // excluding. This avoids enriching a default 20-product page just to show
+  // four cards.
+  const result = await fetchProductList({ categoryId, sort: "newest", limit: 5 }).catch(() => null);
   if (!result) return null;
 
   const related = result.data.filter((p) => p.id !== excludeProductId).slice(0, 4);

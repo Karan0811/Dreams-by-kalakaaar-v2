@@ -25,9 +25,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-brand-primary text-text-on-brand hover:bg-[var(--color-brand-primary-hover)] active:bg-[var(--color-brand-primary-active)]",
+          "bg-brand-primary text-text-on-brand shadow-[var(--shadow-sm)] transition-shadow duration-[var(--duration-fast)] hover:bg-[var(--color-brand-primary-hover)] hover:shadow-[var(--shadow-md)] active:bg-[var(--color-brand-primary-active)] active:shadow-none",
         secondary:
-          "border border-border-strong bg-transparent text-text-primary hover:bg-background-subtle",
+          "border border-border-strong bg-transparent text-text-primary hover:border-brand-primary hover:bg-background-subtle",
         tertiary: "bg-transparent text-text-primary hover:bg-background-subtle",
         ghost:
           "border border-transparent bg-transparent text-text-on-brand hover:border-[color-mix(in_oklab,white_60%,transparent)]",

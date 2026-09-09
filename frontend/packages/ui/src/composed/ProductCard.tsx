@@ -22,7 +22,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
     <div className="group relative flex flex-col">
       <Link
         href={`/products/${product.slug}`}
-        className="relative block aspect-square overflow-hidden rounded-[var(--radius-300)] bg-background-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+        className="relative block aspect-square overflow-hidden rounded-[var(--radius-300)] bg-background-subtle shadow-[var(--shadow-sm)] transition-shadow duration-[var(--duration-standard)] ease-[var(--ease-standard)] group-hover:shadow-[var(--shadow-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
       >
         {image ? (
           <Image
@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             alt={image.altText}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-            className={`object-cover transition-transform duration-[var(--duration-standard)] group-hover:scale-[1.03] ${
+            className={`object-cover transition-transform duration-[var(--duration-slow)] ease-[var(--ease-standard)] group-hover:scale-[1.05] ${
               isSoldOut ? "opacity-60" : ""
             }`}
           />
@@ -44,10 +44,10 @@ export function ProductCard({ product }: { product: ProductSummary }) {
 
       <WishlistButton productId={product.id} className="absolute right-2 top-2" />
 
-      <div className="mt-[var(--space-100)] flex flex-col gap-0.5">
+      <div className="mt-[var(--space-150)] flex flex-col gap-0.5">
         <Link
           href={`/creators/${product.creator.slug}`}
-          className="text-[12px] text-text-secondary hover:text-text-link"
+          className="text-[12px] text-text-secondary transition-colors hover:text-text-link"
         >
           {product.creator.displayName}
           {product.creator.isVerified ? (
@@ -56,13 +56,23 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             </span>
           ) : null}
         </Link>
-        <Link href={`/products/${product.slug}`} className="line-clamp-2 text-[14px] font-medium text-text-primary">
+        <Link
+          href={`/products/${product.slug}`}
+          className="line-clamp-2 font-serif text-[15px] leading-snug text-text-primary transition-colors group-hover:text-brand-primary"
+        >
           {product.title}
         </Link>
         <div className="mt-0.5 flex items-center justify-between">
-          <p className="font-sans text-[14px] font-semibold tabular-nums text-text-primary">
-            {formatMoney(product.price)}
-          </p>
+          <div className="flex items-baseline gap-1.5">
+            <p className="font-sans text-[15px] font-semibold tabular-nums text-text-primary">
+              {formatMoney(product.price)}
+            </p>
+            {product.compareAtPrice ? (
+              <p className="text-[12px] tabular-nums text-text-secondary line-through">
+                {formatMoney(product.compareAtPrice)}
+              </p>
+            ) : null}
+          </div>
           {product.rating ? (
             <span className="flex items-center gap-0.5 text-[12px] text-text-secondary">
               <Star className="size-3 fill-[var(--color-brand-accent)] text-[var(--color-brand-accent)]" aria-hidden />

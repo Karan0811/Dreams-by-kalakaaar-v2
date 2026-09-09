@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, inArray, isNull, lt, gt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNull, lt, gt, or, sql, type SQL } from 'drizzle-orm';
 import { db, withTransaction } from '@/shared/db/client';
 import {
   categories,
@@ -225,7 +225,10 @@ const inStockExpr = sql<boolean>`exists (
 )`;
 
 /** Structured filters shared by both the public and creator-scoped listing queries. */
-function buildFilterConditions(query: ListProductsQuery | ListStoreProductsQuery) {
+function buildFilterConditions(
+  query: ListProductsQuery | ListStoreProductsQuery,
+  minPriceExpression: SQL | SQL.Aliased = minPriceExpr,
+) {
   return [
     query.categoryId ? eq(products.primaryCategoryId, query.categoryId) : undefined,
     query.storeId ? eq(products.storeId, query.storeId) : undefined,
@@ -233,10 +236,26 @@ function buildFilterConditions(query: ListProductsQuery | ListStoreProductsQuery
     query.q
       ? or(ilike(products.title, `%${query.q}%`), ilike(products.description, `%${query.q}%`))
       : undefined,
-    query.minPrice !== undefined ? sql`${minPriceExpr} >= ${query.minPrice}` : undefined,
-    query.maxPrice !== undefined ? sql`${minPriceExpr} <= ${query.maxPrice}` : undefined,
+    query.minPrice !== undefined ? sql`${minPriceExpression} >= ${query.minPrice}` : undefined,
+    query.maxPrice !== undefined ? sql`${minPriceExpression} <= ${query.maxPrice}` : undefined,
     query.inStockOnly ? inStockExpr : undefined,
   ];
+}
+
+/** One grouped scan replaces the repeated per-product min-price subqueries
+ * used by price filters/sorts. The existing (product_id, price_amount) index
+ * still helps the aggregation, while the grouped result is joined once to the
+ * product page. Keep all variants here to preserve the existing min-price
+ * semantics; availability is handled separately by the catalog enrichment. */
+function buildVariantPriceAggregate() {
+  return db
+    .select({
+      productId: productVariants.productId,
+      minPrice: sql<number>`min(${productVariants.priceAmount})`.as('min_price'),
+    })
+    .from(productVariants)
+    .groupBy(productVariants.productId)
+    .as('variant_price_aggregate');
 }
 
 function sortColumn(sort: ProductSort) {
@@ -312,6 +331,55 @@ async function runProductListQuery(
 
   // Page-number pagination for price/popularity sorts (see productSortSchema's doc comment).
   const offset = (query.page - 1) * query.limit;
+
+  // Price filters and price ordering previously repeated the correlated
+  // min-price subquery for every product in WHERE, SELECT, and ORDER BY.
+  // Aggregate active variants once and join that small relation to the page.
+  // This keeps best-selling/newest paths unchanged and avoids introducing a
+  // denormalized price column with update/consistency obligations.
+  const needsPriceAggregate =
+    query.minPrice !== undefined ||
+    query.maxPrice !== undefined ||
+    query.sort === 'priceLow' ||
+    query.sort === 'priceHigh';
+
+  if (needsPriceAggregate) {
+    const variantPrices = buildVariantPriceAggregate();
+    const priceFilterConditions = buildFilterConditions(query, variantPrices.minPrice);
+    const [rows, countRows] = await Promise.all([
+      db
+        .select({ product: products })
+        .from(products)
+        .innerJoin(variantPrices, eq(variantPrices.productId, products.id))
+        .where(and(scopeCondition, notDeleted, ...priceFilterConditions))
+        .orderBy(
+          dir === 'asc' ? asc(variantPrices.minPrice) : desc(variantPrices.minPrice),
+          desc(products.id),
+        )
+        .limit(query.limit)
+        .offset(offset),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(products)
+        .innerJoin(variantPrices, eq(variantPrices.productId, products.id))
+        .where(and(scopeCondition, notDeleted, ...priceFilterConditions)),
+    ]);
+    const data = rows.map((row) => row.product);
+    const totalCount = countRows[0]?.count ?? 0;
+
+    return {
+      data,
+      pagination: {
+        nextCursor: null,
+        hasMore: offset + data.length < totalCount,
+        limit: query.limit,
+        page: query.page,
+        totalPages: Math.max(1, Math.ceil(totalCount / query.limit)),
+        totalCount,
+      },
+    };
+  }
+
   const [rows, totalCount] = await Promise.all([
     db
       .select()

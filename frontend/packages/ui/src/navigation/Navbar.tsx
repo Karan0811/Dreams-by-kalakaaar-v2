@@ -41,43 +41,47 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, account, onMenuToggle
         <button
           type="button"
           onClick={onMenuToggle}
-          className="flex size-10 items-center justify-center rounded-md text-text-primary md:hidden"
+          className="flex size-10 items-center justify-center rounded-md text-text-primary transition-colors duration-[var(--duration-fast)] hover:bg-background-subtle md:hidden"
           aria-label="Open menu"
         >
           <Menu className="size-[var(--size-icon-lg)]" aria-hidden />
         </button>
 
-        <Link href="/" className="font-serif text-[20px] font-medium text-text-primary shrink-0">
-          Dreams by Kalakaaar
+        <Link href="/" className="group flex shrink-0 items-center gap-1.5">
+          <span className="size-1.5 rounded-full bg-brand-accent transition-transform duration-[var(--duration-standard)] group-hover:scale-150" aria-hidden />
+          <span className="font-serif text-[20px] font-medium text-text-primary">Dreams by Kalakaaar</span>
         </Link>
 
-        <nav aria-label="Primary" className="hidden md:flex items-center gap-6 ml-4">
-          {primaryLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "text-[14px] font-medium text-text-secondary hover:text-text-primary",
-                pathname?.startsWith(link.href) && "text-text-primary",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav aria-label="Primary" className="hidden md:flex items-center gap-1 ml-4">
+          {primaryLinks.map((link) => {
+            const isActive = pathname?.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-[14px] font-medium text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-background-subtle hover:text-text-primary",
+                  isActive && "bg-background-subtle text-text-primary",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
           <Link
             href="/search"
             aria-label="Search"
-            className="flex size-10 items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-background-subtle"
+            className="flex size-10 items-center justify-center rounded-md text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-background-subtle hover:text-text-primary"
           >
             <Search className="size-[var(--size-icon-lg)]" aria-hidden />
           </Link>
           <Link
             href="/account/wishlist"
             aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} items` : ""}`}
-            className="relative hidden sm:flex size-10 items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-background-subtle"
+            className="relative hidden sm:flex size-10 items-center justify-center rounded-md text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-background-subtle hover:text-text-primary"
           >
             <Heart className="size-[var(--size-icon-lg)]" aria-hidden />
             {wishlistCount > 0 ? (
@@ -89,7 +93,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, account, onMenuToggle
           <Link
             href="/cart"
             aria-label={`Cart${cartCount ? `, ${cartCount} items` : ""}`}
-            className="relative flex size-10 items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-background-subtle"
+            className="relative flex size-10 items-center justify-center rounded-md text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-background-subtle hover:text-text-primary"
           >
             <ShoppingBag className="size-[var(--size-icon-lg)]" aria-hidden />
             {cartCount > 0 ? (
@@ -101,7 +105,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, account, onMenuToggle
           <Link
             href={account?.isAuthenticated ? "/account" : "/login"}
             aria-label={account?.isAuthenticated ? "Account" : "Sign in"}
-            className="flex size-10 items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-background-subtle"
+            className="flex size-10 items-center justify-center rounded-md text-text-secondary transition-colors duration-[var(--duration-fast)] hover:bg-background-subtle hover:text-text-primary"
           >
             <User className="size-[var(--size-icon-lg)]" aria-hidden />
           </Link>

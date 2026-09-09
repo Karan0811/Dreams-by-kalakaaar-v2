@@ -2,17 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Heart, MapPin, MessageCircle, Package, Settings, Store, User } from "lucide-react";
+import { Bell, Heart, MapPin, Package, Store, User } from "lucide-react";
 import { cn } from "@dbk/utils";
 
+// BUG FIX (Phase 3): "Messages" and "Settings" previously linked to
+// /account/messages and /account/settings, neither of which exists as a
+// page — both 404'd on every account page. Messages has no backend module
+// at all (no messages/conversations module in backend/src/modules);
+// Settings has a working GET/PATCH /v1/users/me/profile endpoint but zero
+// frontend wiring anywhere (no hook, no page). Building either out is a new
+// feature, not a navigation fix, and neither is in the MVP buyer flow
+// (Home → Products → Product Detail → Cart → Checkout → Address → Order
+// Confirmation → Orders → Order Detail) — so the entries are removed here
+// rather than left as dead links. Settings is a good candidate for a future
+// phase since the backend already supports it.
 const accountLinks = [
   { href: "/account/dashboard", label: "Overview", icon: User },
   { href: "/account/orders", label: "Orders", icon: Package },
   { href: "/account/wishlist", label: "Wishlist", icon: Heart },
   { href: "/account/addresses", label: "Addresses", icon: MapPin },
-  { href: "/account/messages", label: "Messages", icon: MessageCircle },
   { href: "/account/notifications", label: "Notifications", icon: Bell },
-  { href: "/account/settings", label: "Settings", icon: Settings },
 ] as const;
 
 const navItemClassName = (isActive: boolean) =>

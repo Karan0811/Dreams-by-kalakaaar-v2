@@ -1,16 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
 import { QueryProvider } from "@dbk/api-client";
 import { Toaster } from "@dbk/ui";
+// FIX (Phase 3 — Google Fonts build/dev issue): see apps/buyer/app/layout.tsx's
+// matching comment. Self-hosted via @fontsource; no network fetch, and the
+// family names match @dbk/config/tailwind/tokens.css's existing
+// `--font-family-sans`/`--font-family-serif` values directly.
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/fraunces/400.css";
+import "@fontsource/fraunces/500.css";
+import "@fontsource/fraunces/600.css";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-family-sans", display: "swap" });
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-family-serif",
-  display: "swap",
-  weight: ["400", "500", "600"],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -28,7 +30,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
+    <html lang="en">
       <body className="min-h-dvh font-sans antialiased">
         <a
           href="#main-content"

@@ -17,7 +17,12 @@ export function useAddToWishlist() {
   return useMutation({
     mutationFn: (productId: string) =>
       browserFetch<WishlistEntry>("/api/wishlist", { method: "POST", body: { productId } }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: wishlistKeys.list() }),
+    onSuccess: (entry) => {
+      queryClient.setQueryData<WishlistEntry[]>(wishlistKeys.list(), (current) => {
+        if (!current || current.some((item) => item.id === entry.id)) return current;
+        return [entry, ...current];
+      });
+    },
   });
 }
 
@@ -26,6 +31,10 @@ export function useRemoveFromWishlist() {
   return useMutation({
     mutationFn: (productId: string) =>
       browserFetch<void>(`/api/wishlist/${productId}`, { method: "DELETE" }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: wishlistKeys.list() }),
+    onSuccess: (_, productId) => {
+      queryClient.setQueryData<WishlistEntry[]>(wishlistKeys.list(), (current) =>
+        current?.filter((item) => item.productId !== productId),
+      );
+    },
   });
 }

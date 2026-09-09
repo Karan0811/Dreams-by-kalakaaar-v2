@@ -61,11 +61,9 @@ export async function addToMyCart(userId: string, variantId: string, quantity: n
 }
 
 export async function updateMyCartItemQuantity(userId: string, cartItemId: string, quantity: number) {
-  const existing = await cartRepository.findCartItemById(userId, cartItemId);
-  if (!existing) throw new CartItemNotFoundError();
-
-  const available = await cartRepository.findVariantWithInventory(existing.variantId);
-  assertVariantAvailable(available, quantity);
+  const row = await cartRepository.findCartItemWithVariantAndInventoryById(userId, cartItemId);
+  if (!row) throw new CartItemNotFoundError();
+  assertVariantAvailable(row, quantity);
 
   const updated = await cartRepository.updateCartItemQuantityById(userId, cartItemId, quantity);
   if (!updated) throw new CartItemNotFoundError();

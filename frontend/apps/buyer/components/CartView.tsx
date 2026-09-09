@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LogIn, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { ApiError, useCart, useRemoveCartItem, useUpdateCartItem } from "@dbk/api-client";
 import { formatMoney } from "@dbk/utils";
-import { Button, Skeleton, toast } from "@dbk/ui";
+import { Button, EmptyState, Skeleton, toast } from "@dbk/ui";
 import type { CartEntry } from "@dbk/types";
 
 /**
@@ -38,35 +38,31 @@ export function CartView() {
   // Login → Product → Add to Cart → Cart flow.
   if (error instanceof ApiError && error.status === 401) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-[var(--radius-300)] border border-border bg-background-subtle py-[var(--space-1200)] text-center">
-        <LogIn className="size-10 text-text-secondary" aria-hidden />
-        <div>
-          <p className="text-[16px] font-medium text-text-primary">Sign in to view your cart</p>
-          <p className="mt-1 text-[14px] text-text-secondary">
-            Your cart is saved to your account once you&apos;re signed in.
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/login">Sign In</Link>
-        </Button>
-      </div>
+      <EmptyState
+        icon={LogIn}
+        title="Sign in to view your cart"
+        description="Your cart is saved to your account once you're signed in."
+        action={
+          <Button asChild>
+            <Link href="/login">Sign In</Link>
+          </Button>
+        }
+      />
     );
   }
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-[var(--radius-300)] border border-border bg-background-subtle py-[var(--space-1200)] text-center">
-        <ShoppingBag className="size-10 text-text-secondary" aria-hidden />
-        <div>
-          <p className="text-[16px] font-medium text-text-primary">Your cart is empty</p>
-          <p className="mt-1 text-[14px] text-text-secondary">
-            Browse the catalog to find something you&apos;ll love.
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/products">Browse Products</Link>
-        </Button>
-      </div>
+      <EmptyState
+        icon={ShoppingBag}
+        title="Your cart is empty"
+        description="Browse the catalog to find something you'll love."
+        action={
+          <Button asChild>
+            <Link href="/products">Browse Products</Link>
+          </Button>
+        }
+      />
     );
   }
 
@@ -97,12 +93,12 @@ export function CartView() {
           return (
             <li
               key={item.id}
-              className="flex gap-3 rounded-[var(--radius-300)] border border-border p-[var(--space-150)]"
+              className="flex gap-3 rounded-[var(--radius-300)] border border-border bg-surface p-[var(--space-200)] shadow-[var(--shadow-sm)] transition-shadow duration-[var(--duration-standard)] hover:shadow-[var(--shadow-md)]"
             >
               <div className="flex flex-1 flex-col">
                 <Link
                   href={`/products/${item.product.slug}`}
-                  className="text-[14px] font-medium text-text-primary hover:text-text-link"
+                  className="text-[14px] font-medium text-text-primary transition-colors hover:text-text-link"
                 >
                   {item.product.title}
                 </Link>
@@ -116,40 +112,42 @@ export function CartView() {
                 {item.variant.status !== "ACTIVE" ? (
                   <p className="mt-1 text-[13px] font-medium text-error">No longer available</p>
                 ) : (
-                  <div className="mt-2 flex items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      aria-label="Decrease quantity"
-                      disabled={item.quantity <= 1 || updateItem.isPending}
-                      onClick={() => handleQuantityChange(item, item.quantity - 1)}
-                    >
-                      <Minus className="size-3" aria-hidden />
-                    </Button>
-                    <span className="w-6 text-center text-[14px] tabular-nums">{item.quantity}</span>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      aria-label="Increase quantity"
-                      disabled={atStockLimit || updateItem.isPending}
-                      onClick={() => handleQuantityChange(item, item.quantity + 1)}
-                    >
-                      <Plus className="size-3" aria-hidden />
-                    </Button>
+                  <div className="mt-2 flex items-center gap-3">
+                    <div className="flex items-center rounded-full border border-border-strong">
+                      <button
+                        type="button"
+                        aria-label="Decrease quantity"
+                        disabled={item.quantity <= 1 || updateItem.isPending}
+                        onClick={() => handleQuantityChange(item, item.quantity - 1)}
+                        className="flex size-8 items-center justify-center rounded-full text-text-primary transition-colors hover:bg-background-subtle disabled:pointer-events-none disabled:opacity-[var(--opacity-disabled)]"
+                      >
+                        <Minus className="size-3" aria-hidden />
+                      </button>
+                      <span className="w-6 text-center text-[14px] tabular-nums">{item.quantity}</span>
+                      <button
+                        type="button"
+                        aria-label="Increase quantity"
+                        disabled={atStockLimit || updateItem.isPending}
+                        onClick={() => handleQuantityChange(item, item.quantity + 1)}
+                        className="flex size-8 items-center justify-center rounded-full text-text-primary transition-colors hover:bg-background-subtle disabled:pointer-events-none disabled:opacity-[var(--opacity-disabled)]"
+                      >
+                        <Plus className="size-3" aria-hidden />
+                      </button>
+                    </div>
                     <Button
                       variant="tertiary"
                       size="sm"
                       aria-label="Remove from cart"
                       isLoading={removeItem.isPending}
                       onClick={() => handleRemove(item)}
-                      className="ml-auto"
+                      className="ml-auto text-text-secondary hover:text-error"
                     >
                       <Trash2 className="size-4" aria-hidden />
                     </Button>
                   </div>
                 )}
               </div>
-              <p className="font-sans text-[14px] font-semibold tabular-nums text-text-primary">
+              <p className="font-sans text-[15px] font-semibold tabular-nums text-text-primary">
                 {formatMoney({ amountMinor: item.variant.priceAmount, currency: "INR" })}
               </p>
             </li>

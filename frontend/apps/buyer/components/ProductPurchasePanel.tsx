@@ -5,14 +5,23 @@ import { Heart } from "lucide-react";
 import { ApiError, useAddToCart, useAddToWishlist, useWishlist, useRemoveFromWishlist } from "@dbk/api-client";
 import { Button, FormField, Input, toast } from "@dbk/ui";
 import type { Product } from "@dbk/types";
+import { ProductVariantSelector } from "./ProductVariantSelector";
+import { useProductVariant } from "./ProductVariantContext";
 
 /**
- * Customization Panel + Add to Cart/Wishlist actions (§3.13). Add to Cart is
- * a mutation against the real Cart backend (`useAddToCart`, Sprint 02) —
- * it's guarded on `product.variantId` being present, since this
- * aspirational catalog page (see `@dbk/types`'s `Product` doc comment)
- * doesn't always carry one yet; when it's missing, the button explains why
- * instead of silently doing nothing or fabricating a fake purchase target.
+ * Variant Selector + Customization Panel + Add to Cart/Wishlist actions
+ * (§3.13). Add to Cart is a mutation against the real Cart backend
+ * (`useAddToCart`, Sprint 02).
+ *
+ * Phase 4: previously guarded only on `product.variantId` — a single
+ * backend-picked default with no way for the buyer to choose a different
+ * size/color, and no way to tell a sold-out *variant* apart from a
+ * sold-out *product* (a product with some in-stock and some sold-out
+ * variants showed as purchasable but silently added whichever variant the
+ * backend happened to default to). Now sourced from `useProductVariant`'s
+ * live selection, which resolves to a specific `ProductVariant` — its own
+ * `availability`, not the aggregate product-level one, is what gates the
+ * button and picks its label.
  */
 export function ProductPurchasePanel({ product }: { product: Product }) {
   const [selections, setSelections] = React.useState<Record<string, string>>({});
@@ -20,20 +29,27 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
   const addToWishlist = useAddToWishlist();
   const removeFromWishlist = useRemoveFromWishlist();
   const { data: wishlist } = useWishlist();
-  const isSoldOut = product.availability === "sold_out";
+  const { selectedVariant, isSelectionComplete } = useProductVariant(product);
   const isWishlisted = wishlist?.some((entry) => entry.productId === product.id) ?? false;
+
+  const isSoldOut = selectedVariant ? selectedVariant.availability === "sold_out" : product.availability === "sold_out";
+  const isUnavailableCombination = isSelectionComplete && !selectedVariant;
 
   const missingRequired = product.customizationFields.some(
     (field) => field.required && !selections[field.id]?.trim(),
   );
 
   function handleAddToCart() {
-    if (!product.variantId) {
-      toast.error("This product isn't available for purchase yet.");
+    if (!selectedVariant) {
+      toast.error(
+        isUnavailableCombination
+          ? "That combination isn't available."
+          : "This product isn't available for purchase yet.",
+      );
       return;
     }
     addToCart.mutate(
-      { variantId: product.variantId, quantity: 1 },
+      { variantId: selectedVariant.id, quantity: 1 },
       {
         onSuccess: () => toast.success("Added to cart"),
         onError: (error) => {
@@ -63,6 +79,8 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
 
   return (
     <div className="flex flex-col gap-[var(--space-300)]">
+      <ProductVariantSelector product={product} />
+
       {product.customizationFields.length > 0 ? (
         <div className="flex flex-col gap-[var(--space-200)]">
           {product.customizationFields.map((field) => (
@@ -81,11 +99,15 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
         <Button
           size="lg"
           className="flex-1"
-          disabled={isSoldOut || missingRequired}
+          disabled={isSoldOut || isUnavailableCombination || missingRequired}
           isLoading={addToCart.isPending}
           onClick={handleAddToCart}
         >
-          {isSoldOut ? "Notify Me When Available" : "Add to Cart"}
+          {isUnavailableCombination
+            ? "Not Available"
+            : isSoldOut
+              ? "Notify Me When Available"
+              : "Add to Cart"}
         </Button>
         <Button
           variant="secondary"

@@ -75,6 +75,26 @@ export async function findCartItemById(userId: string, cartItemId: string) {
   return row ?? null;
 }
 
+/** Same single-round-trip read as the add path, keyed by the cart line for
+ * quantity updates. This replaces a cart-line lookup followed by a separate
+ * variant/inventory lookup. */
+export async function findCartItemWithVariantAndInventoryById(userId: string, cartItemId: string) {
+  const [row] = await db
+    .select({
+      cartItem: cartItems,
+      variant: productVariants,
+      product: products,
+      quantityAvailable: inventory.quantityAvailable,
+    })
+    .from(cartItems)
+    .innerJoin(productVariants, eq(productVariants.id, cartItems.variantId))
+    .innerJoin(products, eq(products.id, productVariants.productId))
+    .leftJoin(inventory, eq(inventory.variantId, productVariants.id))
+    .where(and(eq(cartItems.userId, userId), eq(cartItems.id, cartItemId), notDeleted))
+    .limit(1);
+  return row ?? null;
+}
+
 export async function findVariantWithInventory(variantId: string) {
   const [row] = await db
     .select({

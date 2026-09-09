@@ -70,8 +70,31 @@ export interface Product {
    * a real `variantId` to call the real Cart backend, so this field lets
    * that connection be made correctly wherever real data *is* available,
    * without fabricating one where it isn't.
+   *
+   * Phase 4: kept as the *default* selection (the variant a fresh page
+   * load should preselect) now that `variants` below carries the full,
+   * real set — buyer-side variant selection needs a starting selection as
+   * much as it needs the full list.
    */
   variantId?: Id;
+  /**
+   * Phase 4 — every ACTIVE, buyer-purchasable variant of this product
+   * (`modules/products/service.ts`'s `getPublicProductDetail`), for a real
+   * size/color-style selector. Optional and possibly empty: a product can
+   * genuinely have zero ACTIVE variants (e.g. every variant archived), and
+   * this field doesn't exist at all on `ProductSummary`/catalog-list
+   * responses — only on the single-product detail fetch.
+   */
+  variants?: ProductVariant[];
+}
+
+/** A single buyer-purchasable configuration of a `Product` — Phase 4. */
+export interface ProductVariant {
+  id: Id;
+  /** e.g. `{ size: "M", color: "Indigo" }` — `shared/db/schema/product.ts`'s `productVariants.attributes`. */
+  attributes: Record<string, string>;
+  price: Money;
+  availability: "in_stock" | "low_stock" | "sold_out";
 }
 
 export type ProductSummary = Pick<

@@ -19,6 +19,27 @@ const STATUS_BADGE: Record<RealOrderStatus, { label: string; variant: "neutral" 
 
 const CANCELLABLE: RealOrderStatus[] = ["PENDING", "CONFIRMED"];
 
+/**
+ * `variantAttributesSnapshot` is a JSON string of the variant's attributes
+ * at order time (e.g. `{"size":"Queen"}`) — a snapshot, deliberately, so
+ * this never changes even if the creator later edits or deletes the
+ * variant. Renders as "Size: Queen" (or "Size: Queen · Color: Indigo" for
+ * multiple attributes); `null`/unparseable/empty all render nothing rather
+ * than a raw JSON string or an empty line.
+ */
+function formatVariantAttributes(snapshot: string | null): string | null {
+  if (!snapshot) return null;
+  try {
+    const attrs = JSON.parse(snapshot) as Record<string, string>;
+    const parts = Object.entries(attrs).map(
+      ([key, value]) => `${key.charAt(0).toUpperCase()}${key.slice(1)}: ${value}`,
+    );
+    return parts.length > 0 ? parts.join(" · ") : null;
+  } catch {
+    return null;
+  }
+}
+
 export function OrderDetailClient({ orderId }: { orderId: string }) {
   const { data: order, isLoading, isError, refetch } = useMyOrder(orderId);
   const cancelOrder = useCancelOrder();
@@ -71,7 +92,25 @@ export function OrderDetailClient({ orderId }: { orderId: string }) {
             <li key={item.id} className="flex items-center justify-between text-[14px]">
               <div>
                 <p className="text-text-primary">{item.titleSnapshot}</p>
-                <p className="text-[13px] text-text-secondary">Qty {item.quantity}</p>
+                {/* COMPLETION (Phase 4): variantAttributesSnapshot (e.g.
+                    {"size":"Queen"}) was already captured at order time —
+                    it's what distinguishes "this order was for the Queen,
+                    not the King" — but was never rendered, so a buyer with
+                    a multi-variant order had no way to tell which variant
+                    they'd actually bought from the order page alone. */}
+                {formatVariantAttributes(item.variantAttributesSnapshot) ? (
+                  <p className="text-[13px] text-text-secondary">
+                    {formatVariantAttributes(item.variantAttributesSnapshot)}
+                  </p>
+                ) : null}
+                {/* COMPLETION (Phase 3): unit price was already returned by
+                    the API (OrderItemRecord.unitPriceAmount) but never
+                    rendered — only quantity and the line total were shown.
+                    Adding it here completes the item row the MVP testing
+                    doc already expects ("unit prices, line totals"). */}
+                <p className="text-[13px] text-text-secondary">
+                  Qty {item.quantity} × {formatMoney({ amountMinor: item.unitPriceAmount, currency: order.currency as "INR" })}
+                </p>
               </div>
               <p className="tabular-nums text-text-primary">
                 {formatMoney({ amountMinor: item.lineTotalAmount, currency: order.currency as "INR" })}

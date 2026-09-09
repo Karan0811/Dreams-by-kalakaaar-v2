@@ -26,7 +26,13 @@ export default async function AccountDashboardPage() {
 
       <DashboardOrdersPreview />
 
-      <div className="grid gap-[var(--space-300)] sm:grid-cols-3">
+      {/* BUG FIX (Phase 3): the Messages and Settings cards here linked to
+          /account/messages and /account/settings, neither of which exists —
+          see AccountNav.tsx's matching comment for why they're not being
+          built out this phase. Replaced with an Addresses card, which is a
+          real, working part of the MVP flow and previously had no shortcut
+          here despite Wishlist getting one. */}
+      <div className="grid gap-[var(--space-300)] sm:grid-cols-2">
         <Card>
           <p className="text-[14px] font-medium text-text-primary">Wishlist</p>
           <p className="mt-1 text-[13px] text-text-secondary">Save pieces you love for later.</p>
@@ -35,17 +41,10 @@ export default async function AccountDashboardPage() {
           </Link>
         </Card>
         <Card>
-          <p className="text-[14px] font-medium text-text-primary">Messages</p>
-          <p className="mt-1 text-[13px] text-text-secondary">Order-related conversations with creators.</p>
-          <Link href="/account/messages" className="mt-2 inline-block text-[13px] font-medium text-text-link hover:underline">
-            View messages
-          </Link>
-        </Card>
-        <Card>
-          <p className="text-[14px] font-medium text-text-primary">Settings</p>
-          <p className="mt-1 text-[13px] text-text-secondary">Manage your profile and preferences.</p>
-          <Link href="/account/settings" className="mt-2 inline-block text-[13px] font-medium text-text-link hover:underline">
-            Go to settings
+          <p className="text-[14px] font-medium text-text-primary">Addresses</p>
+          <p className="mt-1 text-[13px] text-text-secondary">Manage your saved shipping addresses.</p>
+          <Link href="/account/addresses" className="mt-2 inline-block text-[13px] font-medium text-text-link hover:underline">
+            Manage addresses
           </Link>
         </Card>
       </div>

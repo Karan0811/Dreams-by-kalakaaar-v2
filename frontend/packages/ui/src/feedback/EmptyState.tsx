@@ -26,7 +26,9 @@ export function EmptyState({ icon: Icon = Inbox, title, description, action, cla
         className,
       )}
     >
-      <Icon className="mb-1 size-8 text-text-secondary" aria-hidden />
+      <span className="mb-1 flex size-14 items-center justify-center rounded-full bg-surface text-brand-primary shadow-[var(--shadow-sm)]">
+        <Icon className="size-6" aria-hidden />
+      </span>
       <p className="text-[16px] font-medium text-text-primary">{title}</p>
       {description ? <p className="max-w-sm text-[14px] text-text-secondary">{description}</p> : null}
       {action ? <div className="mt-[var(--space-150)]">{action}</div> : null}

@@ -85,21 +85,42 @@ export async function getPublicProductDetail(idOrSlug: string) {
   if (!enriched) throw new ProductNotFoundError();
 
   // Sprint 02 Cart wiring: `@dbk/types`'s `Product.variantId` is the real
-  // purchasable unit Add to Cart needs. The buyer product page has no
-  // variant-selector UI yet (customizationFields are freeform text, not
-  // attribute pickers), so this picks one default variant to back the
-  // single "Add to Cart" button — the first in-stock ACTIVE variant, falling
-  // back to the first ACTIVE variant so a made-to-order/temporarily-out-of
-  // -stock product still surfaces a target (the Cart module's own
-  // `assertVariantAvailable` remains the real source of truth and will
-  // reject an unavailable one server-side). Left `null` only when a product
-  // genuinely has no ACTIVE variant at all.
+  // purchasable unit Add to Cart needs. `defaultVariant` picks the first
+  // in-stock ACTIVE variant, falling back to the first ACTIVE variant so a
+  // made-to-order/temporarily-out-of-stock product still surfaces a target
+  // (the Cart module's own `assertVariantAvailable` remains the real
+  // source of truth and will reject an unavailable one server-side). Left
+  // `null` only when a product genuinely has no ACTIVE variant at all.
   const defaultVariant =
     variants.find((v) => v.status === 'ACTIVE' && (v.quantityAvailable ?? 0) > 0) ??
     variants.find((v) => v.status === 'ACTIVE') ??
     null;
 
-  return { ...enriched, variantId: defaultVariant?.id ?? null };
+  // Phase 4 — buyer variant selection: the buyer product page previously
+  // only ever received this one pre-picked `variantId`, with no way to
+  // choose a different size/color; every variant besides the default was
+  // silently discarded here even though `findVariantsForProduct` already
+  // fetched them all. `publicVariants` exposes every ACTIVE variant (never
+  // ARCHIVED — those aren't buyer-purchasable) with the per-variant
+  // attributes/price/availability a real selector UI needs; the buyer app
+  // computes availability the same way `enrichProductsForPublicResponse`
+  // does at the product level (§ that function's `anyLowStock`/
+  // `anyInStock`), just per variant instead of aggregated.
+  const publicVariants = variants
+    .filter((v) => v.status === 'ACTIVE')
+    .map((v) => ({
+      id: v.id,
+      attributes: v.attributes,
+      price: { amountMinor: v.priceAmount, currency: v.priceCurrency },
+      availability: ((): 'in_stock' | 'low_stock' | 'sold_out' => {
+        const available = v.quantityAvailable ?? 0;
+        if (available <= 0) return 'sold_out';
+        if (available <= (v.lowStockThreshold ?? 0)) return 'low_stock';
+        return 'in_stock';
+      })(),
+    }));
+
+  return { ...enriched, variantId: defaultVariant?.id ?? null, variants: publicVariants };
 }
 
 export async function updateProduct(productId: string, input: UpdateProductInput) {
